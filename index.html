@@ -44,13 +44,85 @@
         .btn-delete-selected { background: #dc3545; color: white; border: none; padding: 8px 16px; cursor: pointer; border-radius: 4px; margin: 10px 0; }
 
         /* Filter bar */
-        .filter-bar { background: #f8f9fa; border: 1px solid #ddd; border-radius: 8px; padding: 12px 15px; margin-bottom: 15px; }
-        .filter-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 8px; }
-        .filter-row:last-child { margin-bottom: 0; }
-        .filter-row label { font-weight: bold; font-size: 0.9em; white-space: nowrap; min-width: 70px; text-align: right; }
-        .filter-row input[type="text"], .filter-row .flatpickr-input, .filter-row select { padding: 6px; font-size: 0.9em; width: 130px; }
-        .filter-row .checkbox-wrapper { display: flex; align-items: center; gap: 4px; }
-        .filter-row button { align-self: center; }
+       /* Improved filter bar layout */
+.filter-bar {
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 12px 15px;
+    margin-bottom: 15px;
+}
+
+.filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;                    /* reduced from 10px for tighter alignment */
+    margin-bottom: 8px;
+}
+
+.filter-row:last-child {
+    margin-bottom: 0;
+}
+
+.filter-row label {
+    font-weight: bold;
+    font-size: 0.9em;
+    white-space: nowrap;
+    width: 90px;                 /* fixed label width for perfect alignment */
+    text-align: right;
+    margin-right: 2px;
+}
+
+/* Inputs, selects, and file input */
+.filter-row input[type="text"],
+.filter-row .flatpickr-input,
+.filter-row select,
+.filter-row input[type="file"] {
+    padding: 6px;
+    font-size: 0.9em;
+    width: 130px;               /* match original width */
+    box-sizing: border-box;
+}
+
+/* Year input slightly narrower */
+.filter-row input[type="number"],
+#salesFilterYear {
+    width: 100px;
+}
+
+/* Checkbox wrapper */
+.filter-row .checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.filter-row button {
+    align-self: center;
+    margin-left: 4px;
+}
+
+/* Import row – matches filter rows exactly */
+.import-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+.import-row label {
+    font-weight: bold;
+    font-size: 0.9em;
+    width: 90px;
+    text-align: right;
+    margin-right: 2px;
+}
+.import-row input[type="file"] {
+    padding: 4px;
+    font-size: 0.9em;
+    width: 200px;
+}
 
         /* Tables */
         .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 20px; }
@@ -85,23 +157,25 @@
         .loading-text { margin-top: 15px; font-size: 18px; color: #333; }
 
         /* ===== Mobile ===== */
-        @media (max-width: 600px) {
-            body { padding: 10px; }
-            .form-row { flex-direction: column; height: auto; align-items: stretch; margin-bottom: 12px; }
-            .form-row label { width: 100%; text-align: left; margin-right: 0; line-height: normal; margin-bottom: 4px; }
-            .form-row .input-container { height: 40px; width: 100%; }
-            .btn-group { padding-left: 0; justify-content: center; }
-            .btn-primary, .btn-secondary, .btn-export, .btn-clear, .btn-delete-selected { width: 100%; text-align: center; }
-            .tabs { flex-direction: column; }
-            .tab { border-radius: 5px; width: 100%; text-align: center; }
-            .filter-bar { flex-direction: column; align-items: stretch; padding: 10px; }
-            .filter-row { flex-direction: column; align-items: stretch; gap: 8px; }
-            .filter-row label { text-align: left; min-width: auto; }
-            .filter-row input[type="text"], .filter-row .flatpickr-input, .filter-row select { width: 100%; }
-            .table-wrapper { max-height: 450px; overflow-y: auto; border: 1px solid #ccc; }
-            table { min-width: 100%; }
-            th, td { white-space: normal; font-size: 0.9em; }
-        }
+       @media (max-width: 600px) {
+    .filter-row, .import-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+    }
+    .filter-row label, .import-row label {
+        width: 100%;
+        text-align: left;
+        margin-right: 0;
+    }
+    .filter-row input[type="text"],
+    .filter-row .flatpickr-input,
+    .filter-row select,
+    .filter-row input[type="file"],
+    .import-row input[type="file"] {
+        width: 100%;
+    }
+}
     </style>
 </head>
 <body>
