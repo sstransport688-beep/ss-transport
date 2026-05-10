@@ -413,40 +413,53 @@
             setSalesEditingMode(id);
         }
 
-        async function addOrUpdateSalesOrder() {
-            const date = document.getElementById('soDate').value;
-            if (!date) return alert('Please select a date');
-            const vehicle = getSelectedVehicle();
-            if (!vehicle && document.getElementById('soVehicle').value === '__others__') return alert('Please enter a custom vehicle type');
-            const orderData = {
-                date, clientSender: document.getElementById('soClientSender').value,
-                destFrom: document.getElementById('soDestFrom').value,
-                destTo: document.getElementById('soDestTo').value,
-                vehicle, gross: parseFloat(document.getElementById('soGross').value) || 0,
-                billing: document.getElementById('soBilling').checked
-            };
-            if (editingSalesId) {
-                const idx = salesOrders.findIndex(o => o.id === editingSalesId);
-                if (idx !== -1) salesOrders[idx] = { ...salesOrders[idx], ...orderData };
-                cancelEditSales();
-            } else {
-                salesOrders.push({ id: Date.now(), ...orderData });
-            }
-            await saveCustomVehicleIfNew(vehicle);
-            await saveData();
-            clearSalesForm();
-            buildVehicleOptions();
-            applySalesFilter();
-        }
+async function addOrUpdateSalesOrder() {
+    const date = document.getElementById('soDate').value;
+    if (!date) return alert('Please select a date');
+    const vehicle = getSelectedVehicle();
+    if (!vehicle && document.getElementById('soVehicle').value === '__others__')
+        return alert('Please enter a custom vehicle type');
 
-        async function deleteSalesOrder(id) {
-            confirmDelete('Are you sure you want to delete this sales order?', async () => {
-                salesOrders = salesOrders.filter(o => o.id !== id);
-                if (editingSalesId === id) cancelEditSales();
-                await saveData();
-                applySalesFilter();
-            });
-        }
+    const orderData = {
+        date,
+        clientSender: document.getElementById('soClientSender').value,
+        destFrom: document.getElementById('soDestFrom').value,
+        destTo: document.getElementById('soDestTo').value,
+        vehicle,
+        gross: parseFloat(document.getElementById('soGross').value) || 0,
+        billing: document.getElementById('soBilling').checked
+    };
+
+    if (editingSalesId) {
+        const idx = salesOrders.findIndex(o => o.id === editingSalesId);
+        if (idx !== -1) salesOrders[idx] = { ...salesOrders[idx], ...orderData };
+        cancelEditSales();
+    } else {
+        salesOrders.push({ id: Date.now(), ...orderData });
+    }
+
+    // Immediately update the UI (table)
+    clearSalesForm();
+    buildVehicleOptions();
+    applySalesFilter();
+
+    // Then try to sync with the Sheet (if it fails, the UI still works)
+    try {
+        await saveCustomVehicleIfNew(vehicle);
+        await saveData();
+    } catch (e) {
+        console.warn('Sheet sync failed – data only saved locally.', e);
+    }
+}
+
+async function deleteSalesOrder(id) {
+    confirmDelete('Are you sure you want to delete this sales order?', async () => {
+        salesOrders = salesOrders.filter(o => o.id !== id);
+        if (editingSalesId === id) cancelEditSales();
+        applySalesFilter();
+        try { await saveData(); } catch(e) { console.warn('Delete sync failed', e); }
+    });
+}
 
         function sortSalesOrders() { salesSortDesc = !salesSortDesc; renderSalesOrders(); }
 
@@ -513,35 +526,40 @@
         }
 
         async function addOrUpdateExpense() {
-            const date = document.getElementById('expDate').value;
-            if (!date) return alert('Please select a date');
-            const expenseData = {
-                billNo: document.getElementById('expBillNo').value.trim(),
-                coName: document.getElementById('expCoName').value.trim(),
-                date: date,
-                description: document.getElementById('expDescription').value.trim(),
-                amount: parseFloat(document.getElementById('expAmount').value) || 0
-            };
-            if (editingExpenseId) {
-                const idx = expenses.findIndex(e => e.id === editingExpenseId);
-                if (idx !== -1) Object.assign(expenses[idx], expenseData);
-                cancelEditExpense();
-            } else {
-                expenses.push({ id: Date.now(), ...expenseData });
-            }
-            await saveData();
-            clearExpenseForm();
-            applyExpenseFilter();
-        }
+    const date = document.getElementById('expDate').value;
+    if (!date) return alert('Please select a date');
+    const expenseData = {
+        billNo: document.getElementById('expBillNo').value.trim(),
+        coName: document.getElementById('expCoName').value.trim(),
+        date,
+        description: document.getElementById('expDescription').value.trim(),
+        amount: parseFloat(document.getElementById('expAmount').value) || 0
+    };
+    if (editingExpenseId) {
+        const idx = expenses.findIndex(e => e.id === editingExpenseId);
+        if (idx !== -1) Object.assign(expenses[idx], expenseData);
+        cancelEditExpense();
+    } else {
+        expenses.push({ id: Date.now(), ...expenseData });
+    }
+    clearExpenseForm();
+    applyExpenseFilter();
 
-        async function deleteExpense(id) {
-            confirmDelete('Are you sure you want to delete this expense?', async () => {
-                expenses = expenses.filter(e => e.id !== id);
-                if (editingExpenseId === id) cancelEditExpense();
-                await saveData();
-                applyExpenseFilter();
-            });
-        }
+    try {
+        await saveData();
+    } catch (e) {
+        console.warn('Sheet sync failed – data only saved locally.', e);
+    }
+}
+
+ async function deleteExpense(id) {
+    confirmDelete('Are you sure you want to delete this expense?', async () => {
+        expenses = expenses.filter(e => e.id !== id);
+        if (editingExpenseId === id) cancelEditExpense();
+        applyExpenseFilter();
+        try { await saveData(); } catch(e) { console.warn('Delete sync failed', e); }
+    });
+}
 
         function sortExpenses() { expensesSortDesc = !expensesSortDesc; renderExpenses(); }
 
