@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SS Sales & Net Profit System V1R06</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="SS Transport">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlNTIFRyYW5zcG9ydCBRdW90YXRpb24iLAogICJzaG9ydF9uYW1lIjogIlNTIFRyYW5zcG9ydCIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjZmZmZmZmIiwKICAidGhlbWVfY29sb3IiOiAiIzAwN2JmZiIsCiAgImljb25zIjogW3sKICAgICJzcmMiOiAiZGF0YTppbWFnZS9wbmc7YmFzZTY0LGlWQk9SdzBLR2dvQUFBQ...ICIiwKICAgICJzaXplcyI6ICIxOTJ4MTkyIiwKICAgICJ0eXBlIjogImltYWdlL3BuZyIKICB9XQp9">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1100px; margin: auto; padding: 20px; box-sizing: border-box; }
+        h1 { margin-bottom: 5px; }
+        .tabs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 20px; }
+        .tab { padding: 10px 20px; background: #e0e0e0; border: none; border-radius: 5px 5px 0 0; cursor: pointer; white-space: nowrap; }
+        .tab.active { background: #007bff; color: white; }
+        .panel { border: 1px solid #ccc; border-radius: 0 8px 8px 8px; padding: 20px; display: none; }
+        .panel.active { display: block; }
+
+        /* Flex-row layout for consistent alignment (Sales Order form) */
+        .form-row { display: flex; align-items: center; height: 40px; margin-bottom: 10px; max-width: 750px; }
+        .form-row label { width: 150px; text-align: right; font-weight: bold; margin-right: 10px; line-height: 40px; }
+        .form-row .input-container { flex: 1; display: flex; align-items: center; height: 100%; }
+        .form-row input[type="text"], .form-row input[type="date"], .form-row input[type="number"], .form-row select { width: 100%; height: 100%; padding: 0 8px; font-size: 14px; box-sizing: border-box; }
+        .form-row .checkbox-container { display: flex; align-items: center; gap: 5px; }
+        .btn-group { display: flex; flex-wrap: wrap; gap: 10px; max-width: 750px; margin-top: 10px; justify-content: flex-start; padding-left: 160px; }
+        .btn-primary { background: #007bff; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; white-space: nowrap; }
+        .btn-secondary { background: #6c757d; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; white-space: nowrap; }
+        .btn-danger { background: #dc3545; color: white; border: none; padding: 4px 8px; cursor: pointer; border-radius: 3px; white-space: nowrap; }
+        .btn-edit { background: #ffc107; color: black; border: none; padding: 4px 8px; cursor: pointer; border-radius: 3px; margin-right: 4px; }
+        .btn-export { background: #28a745; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; white-space: nowrap; }
+        .btn-clear { background: #ffc107; color: black; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; white-space: nowrap; }
+
+        .filter-bar { background: #f8f9fa; border: 1px solid #ddd; border-radius: 8px; padding: 12px 15px; margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        .filter-bar label { font-weight: bold; font-size: 0.9em; white-space: nowrap; }
+        .filter-bar input[type="date"], .filter-bar input[type="text"] { padding: 6px; font-size: 0.9em; width: 130px; }
+        .filter-bar select { padding: 6px; font-size: 0.9em; }
+        .filter-bar .checkbox-wrapper { display: flex; align-items: center; gap: 4px; }
+        .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; min-width: 700px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; white-space: nowrap; }
+        th { background: #f0f0f0; user-select: none; }
+        th.sortable { cursor: pointer; }
+        th.sortable:hover { background: #e0e0e0; }
+        .sort-controls { display: flex; align-items: center; gap: 4px; }
+        .sort-arrow { margin-left: 5px; font-size: 0.8em; }
+        .sort-mode-select { font-size: 0.8em; padding: 2px 4px; border: 1px solid #ccc; border-radius: 3px; background: white; cursor: pointer; }
+        .output-block { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-top: 15px; }
+        .hidden { display: none; }
+        .billing-badge { display: inline-block; background: #28a745; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; }
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .form-row { flex-direction: column; height: auto; align-items: stretch; }
+            .form-row label { width: 100%; text-align: left; margin-right: 0; line-height: normal; margin-bottom: 4px; }
+            .form-row .input-container { height: 40px; }
+            .btn-group { padding-left: 0; }
+            .tabs { flex-direction: column; }
+            .tab { border-radius: 5px; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+            .filter-bar input[type="date"], .filter-bar input[type="text"] { width: 100%; }
+            .table-wrapper { max-height: 400px; overflow-y: auto; border: 1px solid #ccc; }
+            table { min-width: auto; }
+        }
+    </style>
+</head>
+<body>
+    <h1>📊 Sales & Net Profit System</h1>
+    <p>Create sales orders, log expenses, view net profit, calculate income tax.</p>
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab('sales')">📝 Sales Orders</button>
+        <button class="tab" onclick="switchTab('expenses')">🧾 Expenses</button>
+        <button class="tab" onclick="switchTab('report')">📈 Report & Tax</button>
+    </div>
+
+    <!-- SALES PANEL -->
+    <div class="panel active" id="salesPanel">
+        <h3>Create Sales Order</h3>
+        <div class="form-row"><label for="soDate">Date:</label><div class="input-container"><input type="date" id="soDate"></div></div>
+        <div class="form-row"><label for="soClientSender">Client/Sender:</label><div class="input-container"><input type="text" id="soClientSender" placeholder="Client/Sender"></div></div>
+        <div class="form-row"><label for="soDestFrom">Destination From:</label><div class="input-container"><input type="text" id="soDestFrom" placeholder="Pick‑up point"></div></div>
+        <div class="form-row"><label for="soDestTo">Destination To:</label><div class="input-container"><input type="text" id="soDestTo" placeholder="Drop‑off point"></div></div>
+        <div class="form-row"><label for="soVehicle">Vehicle Type:</label><div class="input-container"><select id="soVehicle" onchange="handleVehicleTypeChange()"></select></div></div>
+        <div class="form-row hidden" id="customVehicleRow"><label for="customVehicle">Custom Type:</label><div class="input-container"><input type="text" id="customVehicle" placeholder="Enter new vehicle type"></div></div>
+        <div class="form-row"><label for="soGross">Gross Price (RM):</label><div class="input-container"><input type="number" id="soGross" step="0.01" placeholder="0.00"></div></div>
+        <div class="form-row"><label>Billing:</label><div class="input-container checkbox-container"><input type="checkbox" id="soBilling" style="margin:0;"><span style="font-weight:normal;">Mark as billing order</span></div></div>
+        <div class="btn-group">
+            <button class="btn-primary" id="addOrderBtn" onclick="addOrUpdateSalesOrder()">Add Order</button>
+            <button class="btn-secondary hidden" id="cancelEditSalesBtn" onclick="cancelEditSales()">Cancel</button>
+            <button class="btn-export" onclick="exportSalesOrders()">📥 Export XLSX</button>
+        </div>
+
+        <h4>🔍 Filter Sales Orders</h4>
+        <div class="filter-bar">
+            <label>Date From:</label><input type="date" id="salesFilterDateFrom">
+            <label>Date To:</label><input type="date" id="salesFilterDateTo">
+            <label>Client:</label><input type="text" id="salesFilterClient" placeholder="Search client...">
+            <label>Vehicle:</label><select id="salesFilterVehicle"><option value="">All Vehicles</option></select>
+            <div class="checkbox-wrapper"><input type="checkbox" id="salesFilterBilling"><label for="salesFilterBilling" style="font-weight:normal;">Only billing</label></div>
+            <button class="btn-primary" onclick="applySalesFilter()">Search</button>
+            <button class="btn-clear" onclick="clearSalesFilter()">Clear</button>
+        </div>
+
+        <h4>All Sales Orders</h4>
+        <div class="table-wrapper">
+            <table id="soTable">
+                <thead><tr>
+                    <th class="sortable" onclick="sortSalesOrders()"><div class="sort-controls"><span>Date <span class="sort-arrow" id="soSortArrow">▼</span></span><select class="sort-mode-select" id="soSortMode" onclick="event.stopPropagation()" onchange="sortSalesOrders()"><option value="date">Date</option><option value="month">Month</option><option value="year">Year</option></select></div></th>
+                    <th>Client/Sender</th><th>Destination From</th><th>Destination To</th><th>Vehicle</th><th>Gross</th><th>Billing</th><th>Action</th>
+                </tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- EXPENSES PANEL -->
+    <div class="panel" id="expensesPanel">
+        <h3>Log Expense</h3>
+        <div class="form-row"><label for="expBillNo">Bill No:</label><div class="input-container"><input type="text" id="expBillNo" placeholder="Invoice / receipt number"></div></div>
+        <div class="form-row"><label for="expCoName">Co name:</label><div class="input-container"><input type="text" id="expCoName" placeholder="Company / supplier name"></div></div>
+        <div class="form-row"><label for="expDate">Date:</label><div class="input-container"><input type="date" id="expDate"></div></div>
+        <div class="form-row"><label for="expDescription">Description:</label><div class="input-container"><input type="text" id="expDescription" placeholder="e.g. Diesel, Tyre, Fruit supplier..."></div></div>
+        <div class="form-row"><label for="expAmount">Amount (RM):</label><div class="input-container"><input type="number" id="expAmount" step="0.01" placeholder="0.00"></div></div>
+        <div class="btn-group">
+            <button class="btn-primary" id="addExpenseBtn" onclick="addOrUpdateExpense()">Add Expense</button>
+            <button class="btn-secondary hidden" id="cancelEditExpenseBtn" onclick="cancelEditExpense()">Cancel</button>
+            <button class="btn-export" onclick="exportExpenses()">📥 Export XLSX</button>
+        </div>
+
+        <h4>🔍 Filter Expenses</h4>
+        <div class="filter-bar">
+            <label>Date From:</label><input type="date" id="expFilterDateFrom">
+            <label>Date To:</label><input type="date" id="expFilterDateTo">
+            <label>Search:</label><input type="text" id="expFilterSearch" placeholder="Co name or description">
+            <button class="btn-primary" onclick="applyExpenseFilter()">Search</button>
+            <button class="btn-clear" onclick="clearExpenseFilter()">Clear</button>
+        </div>
+
+        <h4>All Expenses</h4>
+        <div class="table-wrapper">
+            <table id="expTable">
+                <thead><tr>
+                    <th>Bill No</th><th>Co name</th>
+                    <th class="sortable" onclick="sortExpenses()"><div class="sort-controls"><span>Date <span class="sort-arrow" id="expSortArrow">▼</span></span><select class="sort-mode-select" id="expSortMode" onclick="event.stopPropagation()" onchange="sortExpenses()"><option value="date">Date</option><option value="month">Month</option><option value="year">Year</option></select></div></th>
+                    <th>Description</th><th>Amount</th><th>Action</th>
+                </tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- REPORT PANEL -->
+    <div class="panel" id="reportPanel">
+        <h3>Net Profit Report & Tax Calculation</h3>
+        <div class="form-row"><label for="periodType">Period:</label><div class="input-container"><select id="periodType" onchange="updatePeriodInputs()"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select></div></div>
+        <div id="periodInputs" class="form-row"><label>Date:</label><div class="input-container"><input type="date" id="singleDate"></div></div>
+        <div class="btn-group">
+            <button class="btn-primary" onclick="generateReport()">Generate Report</button>
+            <button class="btn-export" onclick="exportReport()">📥 Export XLSX</button>
+        </div>
+        <div id="reportOutput" class="output-block"><p>Select period and click <strong>Generate Report</strong>.</p></div>
+        <div id="taxSection" style="display:none;">
+            <h4>💰 Income Tax on Net Profit (Add‑on)</h4>
+            <label>Annual Tax‑Free Relief (RM):</label><input type="number" id="relief" value="0" step="1" style="width:120px;" onchange="calculateTax()"><small> (e.g. 9000 for personal relief, scaled to period)</small><br><br>
+            <label>Tax Already Paid this period (RM):</label><input type="number" id="taxPaid" value="0" step="0.01" onchange="calculateTax()"><br><br>
+            <label>Max Repayment Cap (RM):</label><input type="number" id="maxRepay" value="999999" step="0.01" onchange="calculateTax()"><br><br>
+            <button class="btn-primary" onclick="calculateTax()">Calculate Tax</button>
+            <div id="taxOutput" class="output-block" style="margin-top:15px;"></div>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ Replace with your own Google Apps Script deployment URL
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwrL-niEq2CxwNTFf2rt4yC3dmEjkLYaBiTzslab-iCoUzGejrH2pJfgk0drPr6psOIJw/exec';
+
+        // Standard vehicles plus custom ones loaded from server
+        const STANDARD_VEHICLES = ['10ft Lorry', '14ft Lorry', '17ft Lorry'];
+        let customVehicles = [];
+
+        let salesOrders = [];
+        let expenses = [];
+        let filteredSalesOrders = [];
+        let filteredExpenses = [];
+        let editingSalesId = null;
+        let editingExpenseId = null;
+
+        let salesSortDesc = true, salesSortMode = 'date';
+        let expensesSortDesc = true, expensesSortMode = 'date';
+        let lastReportData = null;
+
+        const taxBrackets = [
+            { min:0, max:5000, rate:0 }, { min:5001, max:20000, rate:0.01 }, { min:20001, max:35000, rate:0.03 },
+            { min:35001, max:50000, rate:0.06 }, { min:50001, max:70000, rate:0.11 }, { min:70001, max:100000, rate:0.19 },
+            { min:100001, max:400000, rate:0.25 }, { min:400001, max:600000, rate:0.26 }, { min:600001, max:2000000, rate:0.28 },
+            { min:2000001, max:Infinity, rate:0.30 }
+        ];
+
+        // ================== API HELPERS ==================
+        async function loadData() {
+            try {
+                const [salesRes, expRes, customRes] = await Promise.all([
+                    fetch(`${API_URL}?sheet=SalesOrders&action=get`),
+                    fetch(`${API_URL}?sheet=Expenses&action=get`),
+                    fetch(`${API_URL}?sheet=CustomVehicles&action=get`)
+                ]);
+                const salesData = await salesRes.json();
+                const expData = await expRes.json();
+                const customData = await customRes.json();
+
+                salesOrders = salesData.map(row => ({
+                    id: Date.now() + Math.random(),
+                    date: row['Date'] || '',
+                    clientSender: row['Client/Sender'] || '',
+                    destFrom: row['Destination From'] || '',
+                    destTo: row['Destination To'] || '',
+                    vehicle: row['Vehicle'] || '',
+                    gross: parseFloat(row['Gross (RM)']) || 0,
+                    billing: row['Billing'] === 'Yes'
+                }));
+                expenses = expData.map(row => ({
+                    id: Date.now() + Math.random(),
+                    billNo: row['Bill No'] || '',
+                    coName: row['Co name'] || '',
+                    date: row['Date'] || '',
+                    description: row['Description'] || '',
+                    amount: parseFloat(row['Amount (RM)']) || 0
+                }));
+                // Custom vehicles are just the first column (Vehicle) of each row (skip header)
+                customVehicles = customData.map(row => row['Vehicle']).filter(v => v && !STANDARD_VEHICLES.includes(v));
+            } catch (e) {
+                console.error('Load failed', e);
+                salesOrders = [];
+                expenses = [];
+                customVehicles = [];
+            }
+            applySalesFilter();
+            applyExpenseFilter();
+            buildVehicleOptions();
+        }
+
+        async function saveData() {
+            const salesHeaders = ['Date','Client/Sender','Destination From','Destination To','Vehicle','Gross (RM)','Billing'];
+            const salesArray = salesOrders.map(o => [o.date, o.clientSender, o.destFrom, o.destTo, o.vehicle, o.gross, o.billing ? 'Yes' : 'No']);
+            const expHeaders = ['Bill No','Co name','Date','Description','Amount (RM)'];
+            const expArray = expenses.map(e => [e.billNo, e.coName, e.date, e.description, e.amount]);
+
+            await Promise.all([
+                fetch(`${API_URL}?sheet=SalesOrders&action=replace`, { method:'POST', body: JSON.stringify([salesHeaders, ...salesArray]) }),
+                fetch(`${API_URL}?sheet=Expenses&action=replace`, { method:'POST', body: JSON.stringify([expHeaders, ...expArray]) })
+            ]);
+        }
+
+        async function saveCustomVehicles() {
+            const vehicleHeaders = ['Vehicle'];
+            const vehicleArray = customVehicles.map(v => [v]);
+            await fetch(`${API_URL}?sheet=CustomVehicles&action=replace`, { method:'POST', body: JSON.stringify([vehicleHeaders, ...vehicleArray]) });
+        }
+
+        // ================== VEHICLE DROPDOWN ==================
+        function buildVehicleOptions(selectedVehicle = null) {
+            const select = document.getElementById('soVehicle');
+            select.innerHTML = '';
+            STANDARD_VEHICLES.forEach(v => select.add(new Option(v, v)));
+            customVehicles.forEach(v => select.add(new Option(v, v)));
+            select.add(new Option('Others…', '__others__'));
+            if (selectedVehicle) {
+                if ([...select.options].some(opt => opt.value === selectedVehicle)) {
+                    select.value = selectedVehicle;
+                    hideCustomVehicleInput();
+                } else {
+                    select.value = '__others__';
+                    document.getElementById('customVehicle').value = selectedVehicle;
+                    showCustomVehicleInput();
+                }
+            } else {
+                select.value = STANDARD_VEHICLES[0];
+                hideCustomVehicleInput();
+            }
+            updateVehicleFilterDropdown();
+        }
+
+        function updateVehicleFilterDropdown() {
+            const filterSelect = document.getElementById('salesFilterVehicle');
+            if (!filterSelect) return;
+            const current = filterSelect.value;
+            filterSelect.innerHTML = '<option value="">All Vehicles</option>';
+            STANDARD_VEHICLES.forEach(v => filterSelect.add(new Option(v, v)));
+            customVehicles.forEach(v => filterSelect.add(new Option(v, v)));
+            filterSelect.value = current;
+        }
+
+        function handleVehicleTypeChange() {
+            if (document.getElementById('soVehicle').value === '__others__') showCustomVehicleInput();
+            else hideCustomVehicleInput();
+        }
+
+        function showCustomVehicleInput() { document.getElementById('customVehicleRow').classList.remove('hidden'); }
+        function hideCustomVehicleInput() { document.getElementById('customVehicleRow').classList.add('hidden'); document.getElementById('customVehicle').value = ''; }
+        function getSelectedVehicle() { return document.getElementById('soVehicle').value === '__others__' ? document.getElementById('customVehicle').value.trim() : document.getElementById('soVehicle').value; }
+
+        async function saveCustomVehicleIfNew(vehicle) {
+            if (!vehicle || vehicle === '__others__') return;
+            if (!STANDARD_VEHICLES.includes(vehicle) && !customVehicles.includes(vehicle)) {
+                customVehicles.push(vehicle);
+                await saveCustomVehicles();
+                updateVehicleFilterDropdown();
+            }
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.getElementById(tabName+'Panel').classList.add('active');
+            event.target.classList.add('active');
+            if (tabName === 'sales') { buildVehicleOptions(); applySalesFilter(); }
+            if (tabName === 'expenses') { applyExpenseFilter(); }
+        }
+
+        function confirmDelete(message, callback) { if (confirm(message)) callback(); }
+
+        // ================== FILTERS ==================
+        function applySalesFilter() {
+            const dateFrom = document.getElementById('salesFilterDateFrom').value;
+            const dateTo = document.getElementById('salesFilterDateTo').value;
+            const client = document.getElementById('salesFilterClient').value.toLowerCase().trim();
+            const vehicle = document.getElementById('salesFilterVehicle').value;
+            const billingOnly = document.getElementById('salesFilterBilling').checked;
+            filteredSalesOrders = salesOrders.filter(o => {
+                if (dateFrom && o.date < dateFrom) return false;
+                if (dateTo && o.date > dateTo) return false;
+                if (client && !(o.clientSender||'').toLowerCase().includes(client)) return false;
+                if (vehicle && o.vehicle !== vehicle) return false;
+                if (billingOnly && !o.billing) return false;
+                return true;
+            });
+            renderSalesOrders();
+        }
+
+        function clearSalesFilter() {
+            document.getElementById('salesFilterDateFrom').value = '';
+            document.getElementById('salesFilterDateTo').value = '';
+            document.getElementById('salesFilterClient').value = '';
+            document.getElementById('salesFilterVehicle').value = '';
+            document.getElementById('salesFilterBilling').checked = false;
+            filteredSalesOrders = [...salesOrders];
+            renderSalesOrders();
+        }
+
+        function applyExpenseFilter() {
+            const dateFrom = document.getElementById('expFilterDateFrom').value;
+            const dateTo = document.getElementById('expFilterDateTo').value;
+            const search = document.getElementById('expFilterSearch').value.toLowerCase().trim();
+            filteredExpenses = expenses.filter(e => {
+                if (dateFrom && e.date < dateFrom) return false;
+                if (dateTo && e.date > dateTo) return false;
+                if (search) {
+                    const haystack = (e.coName||'') + ' ' + (e.description||'') + ' ' + (e.billNo||'');
+                    if (!haystack.toLowerCase().includes(search)) return false;
+                }
+                return true;
+            });
+            renderExpenses();
+        }
+
+        function clearExpenseFilter() {
+            document.getElementById('expFilterDateFrom').value = '';
+            document.getElementById('expFilterDateTo').value = '';
+            document.getElementById('expFilterSearch').value = '';
+            filteredExpenses = [...expenses];
+            renderExpenses();
+        }
+
+        // ================== SALES ORDERS ==================
+        function populateSalesForm(order) {
+            document.getElementById('soDate').value = order.date;
+            document.getElementById('soClientSender').value = order.clientSender || '';
+            document.getElementById('soDestFrom').value = order.destFrom || '';
+            document.getElementById('soDestTo').value = order.destTo || '';
+            document.getElementById('soGross').value = order.gross;
+            document.getElementById('soBilling').checked = order.billing || false;
+            buildVehicleOptions(order.vehicle);
+        }
+
+        function clearSalesForm() {
+            document.getElementById('soDate').value = '';
+            document.getElementById('soClientSender').value = '';
+            document.getElementById('soDestFrom').value = '';
+            document.getElementById('soDestTo').value = '';
+            document.getElementById('soVehicle').value = STANDARD_VEHICLES[0];
+            hideCustomVehicleInput();
+            document.getElementById('soGross').value = '';
+            document.getElementById('soBilling').checked = false;
+        }
+
+        function setSalesEditingMode(orderId) {
+            editingSalesId = orderId;
+            document.getElementById('addOrderBtn').textContent = 'Update Order';
+            document.getElementById('cancelEditSalesBtn').classList.remove('hidden');
+        }
+
+        function cancelEditSales() {
+            editingSalesId = null;
+            clearSalesForm();
+            document.getElementById('addOrderBtn').textContent = 'Add Order';
+            document.getElementById('cancelEditSalesBtn').classList.add('hidden');
+        }
+
+        function editSalesOrder(id) {
+            const order = salesOrders.find(o => o.id === id);
+            if (!order) return;
+            populateSalesForm(order);
+            setSalesEditingMode(id);
+        }
+
+        async function addOrUpdateSalesOrder() {
+            const date = document.getElementById('soDate').value;
+            if (!date) return alert('Please select a date');
+            const vehicle = getSelectedVehicle();
+            if (!vehicle && document.getElementById('soVehicle').value === '__others__') return alert('Please enter a custom vehicle type');
+            const orderData = {
+                date, clientSender: document.getElementById('soClientSender').value,
+                destFrom: document.getElementById('soDestFrom').value,
+                destTo: document.getElementById('soDestTo').value,
+                vehicle, gross: parseFloat(document.getElementById('soGross').value) || 0,
+                billing: document.getElementById('soBilling').checked
+            };
+            if (editingSalesId) {
+                const idx = salesOrders.findIndex(o => o.id === editingSalesId);
+                if (idx !== -1) salesOrders[idx] = { ...salesOrders[idx], ...orderData };
+                cancelEditSales();
+            } else {
+                salesOrders.push({ id: Date.now(), ...orderData });
+            }
+            await saveCustomVehicleIfNew(vehicle);
+            await saveData();
+            clearSalesForm();
+            buildVehicleOptions();
+            applySalesFilter();
+        }
+
+        async function deleteSalesOrder(id) {
+            confirmDelete('Are you sure you want to delete this sales order?', async () => {
+                salesOrders = salesOrders.filter(o => o.id !== id);
+                if (editingSalesId === id) cancelEditSales();
+                await saveData();
+                applySalesFilter();
+            });
+        }
+
+        function sortSalesOrders() { salesSortDesc = !salesSortDesc; renderSalesOrders(); }
+
+        function renderSalesOrders() {
+            const tbody = document.querySelector('#soTable tbody');
+            salesSortMode = document.getElementById('soSortMode').value;
+            const sorted = [...filteredSalesOrders].sort((a, b) => {
+                const dA = new Date(a.date), dB = new Date(b.date);
+                let primary = 0, secondary = 0;
+                if (salesSortMode === 'date') primary = dA - dB;
+                else if (salesSortMode === 'month') { primary = dA.getMonth() - dB.getMonth(); if (primary === 0) secondary = dA.getDate() - dB.getDate(); }
+                else if (salesSortMode === 'year') { primary = dA.getFullYear() - dB.getFullYear(); if (primary === 0) secondary = dA - dB; }
+                let result = primary !== 0 ? primary : secondary;
+                return salesSortDesc ? -result : result;
+            });
+            document.getElementById('soSortArrow').textContent = salesSortDesc ? '▼' : '▲';
+            tbody.innerHTML = '';
+            sorted.forEach(order => {
+                const badge = order.billing ? '<span class="billing-badge">Billing</span>' : '';
+                tbody.innerHTML += `<tr>
+                    <td>${order.date}</td><td>${order.clientSender||''}</td><td>${order.destFrom||''}</td><td>${order.destTo||''}</td>
+                    <td>${order.vehicle||''}</td><td>${order.gross.toFixed(2)}</td><td>${badge}</td>
+                    <td><button class="btn-edit" onclick="editSalesOrder(${order.id})">Edit</button>
+                    <button class="btn-danger" onclick="deleteSalesOrder(${order.id})">Delete</button></td>
+                </tr>`;
+            });
+        }
+
+        // ================== EXPENSES ==================
+        function populateExpenseForm(exp) {
+            document.getElementById('expBillNo').value = exp.billNo || '';
+            document.getElementById('expCoName').value = exp.coName || '';
+            document.getElementById('expDate').value = exp.date;
+            document.getElementById('expDescription').value = exp.description || '';
+            document.getElementById('expAmount').value = exp.amount;
+        }
+
+        function clearExpenseForm() {
+            document.getElementById('expBillNo').value = '';
+            document.getElementById('expCoName').value = '';
+            document.getElementById('expDate').value = '';
+            document.getElementById('expDescription').value = '';
+            document.getElementById('expAmount').value = '';
+        }
+
+        function setExpenseEditingMode(expId) {
+            editingExpenseId = expId;
+            document.getElementById('addExpenseBtn').textContent = 'Update Expense';
+            document.getElementById('cancelEditExpenseBtn').classList.remove('hidden');
+        }
+
+        function cancelEditExpense() {
+            editingExpenseId = null;
+            clearExpenseForm();
+            document.getElementById('addExpenseBtn').textContent = 'Add Expense';
+            document.getElementById('cancelEditExpenseBtn').classList.add('hidden');
+        }
+
+        function editExpense(id) {
+            const exp = expenses.find(e => e.id === id);
+            if (!exp) return;
+            populateExpenseForm(exp);
+            setExpenseEditingMode(id);
+        }
+
+        async function addOrUpdateExpense() {
+            const date = document.getElementById('expDate').value;
+            if (!date) return alert('Please select a date');
+            const expenseData = {
+                billNo: document.getElementById('expBillNo').value.trim(),
+                coName: document.getElementById('expCoName').value.trim(),
+                date: date,
+                description: document.getElementById('expDescription').value.trim(),
+                amount: parseFloat(document.getElementById('expAmount').value) || 0
+            };
+            if (editingExpenseId) {
+                const idx = expenses.findIndex(e => e.id === editingExpenseId);
+                if (idx !== -1) Object.assign(expenses[idx], expenseData);
+                cancelEditExpense();
+            } else {
+                expenses.push({ id: Date.now(), ...expenseData });
+            }
+            await saveData();
+            clearExpenseForm();
+            applyExpenseFilter();
+        }
+
+        async function deleteExpense(id) {
+            confirmDelete('Are you sure you want to delete this expense?', async () => {
+                expenses = expenses.filter(e => e.id !== id);
+                if (editingExpenseId === id) cancelEditExpense();
+                await saveData();
+                applyExpenseFilter();
+            });
+        }
+
+        function sortExpenses() { expensesSortDesc = !expensesSortDesc; renderExpenses(); }
+
+        function renderExpenses() {
+            const tbody = document.querySelector('#expTable tbody');
+            expensesSortMode = document.getElementById('expSortMode').value;
+            const sorted = [...filteredExpenses].sort((a, b) => {
+                const dA = new Date(a.date), dB = new Date(b.date);
+                let primary = 0, secondary = 0;
+                if (expensesSortMode === 'date') primary = dA - dB;
+                else if (expensesSortMode === 'month') { primary = dA.getMonth() - dB.getMonth(); if (primary === 0) secondary = dA.getDate() - dB.getDate(); }
+                else if (expensesSortMode === 'year') { primary = dA.getFullYear() - dB.getFullYear(); if (primary === 0) secondary = dA - dB; }
+                let result = primary !== 0 ? primary : secondary;
+                return expensesSortDesc ? -result : result;
+            });
+            document.getElementById('expSortArrow').textContent = expensesSortDesc ? '▼' : '▲';
+            tbody.innerHTML = '';
+            sorted.forEach(exp => {
+                tbody.innerHTML += `<tr>
+                    <td>${exp.billNo||''}</td><td>${exp.coName||''}</td><td>${exp.date}</td><td>${exp.description||''}</td>
+                    <td>${exp.amount.toFixed(2)}</td>
+                    <td><button class="btn-edit" onclick="editExpense(${exp.id})">Edit</button>
+                    <button class="btn-danger" onclick="deleteExpense(${exp.id})">Delete</button></td>
+                </tr>`;
+            });
+        }
+
+        // ================== REPORT & TAX ==================
+        function updatePeriodInputs() {
+            const type = document.getElementById('periodType').value;
+            const container = document.getElementById('periodInputs');
+            if (type === 'daily') container.innerHTML = `<label>Date:</label><div class="input-container"><input type="date" id="singleDate"></div>`;
+            else if (type === 'weekly') container.innerHTML = `<label>Week start (Monday):</label><div class="input-container"><input type="date" id="weekStart"></div>`;
+            else if (type === 'monthly') container.innerHTML = `<label>Month:</label><div class="input-container"><input type="month" id="monthPicker"></div>`;
+            else if (type === 'yearly') container.innerHTML = `<label>Year:</label><div class="input-container"><input type="number" id="yearInput" value="${new Date().getFullYear()}" min="2000" max="2100"></div>`;
+        }
+
+        function getPeriodRange() {
+            const type = document.getElementById('periodType').value;
+            let start, end;
+            if (type === 'daily') { const val = document.getElementById('singleDate').value; if (!val) return null; start = end = new Date(val); }
+            else if (type === 'weekly') { const val = document.getElementById('weekStart').value; if (!val) return null; start = new Date(val); end = new Date(start); end.setDate(start.getDate() + 6); }
+            else if (type === 'monthly') { const val = document.getElementById('monthPicker').value; if (!val) return null; const [y, m] = val.split('-').map(Number); start = new Date(y, m-1, 1); end = new Date(y, m, 0); }
+            else if (type === 'yearly') { const y = document.getElementById('yearInput').value; if (!y) return null; start = new Date(y, 0, 1); end = new Date(y, 11, 31); }
+            return { start, end };
+        }
+
+        function isDateInRange(dateStr, start, end) { const d = new Date(dateStr); return d >= start && d <= end; }
+
+        function generateReport() {
+            const range = getPeriodRange();
+            if (!range) return alert('Please fill in the period fields.');
+            const { start, end } = range;
+            const filteredSales = salesOrders.filter(o => isDateInRange(o.date, start, end));
+            const totalSales = filteredSales.reduce((sum, o) => sum + o.gross, 0);
+            const filteredExpenses = expenses.filter(e => isDateInRange(e.date, start, end));
+            const totalExpenses = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
+            const netProfit = totalSales - totalExpenses;
+            document.getElementById('reportOutput').innerHTML = `
+                <p><strong>Period:</strong> ${start.toLocaleDateString()} – ${end.toLocaleDateString()}</p>
+                <p><strong>Total Sales:</strong> RM ${totalSales.toFixed(2)}</p>
+                <p><strong>Total Deductions (Expenses):</strong> RM ${totalExpenses.toFixed(2)}</p>
+                <p style="font-size:1.2em;"><strong>Net Profit (toEarn):</strong> RM ${netProfit.toFixed(2)}</p>`;
+            window.currentNetProfit = netProfit;
+            window.currentStart = start;
+            window.currentEnd = end;
+            document.getElementById('taxSection').style.display = 'block';
+            calculateTax();
+        }
+
+        function calcAnnualTax(chargeable) {
+            let tax = 0;
+            for (let b of taxBrackets) { if (chargeable > b.min) { let upper = Math.min(chargeable, b.max); tax += (upper - b.min + 1) * b.rate; } if (chargeable <= b.max) break; }
+            return tax;
+        }
+
+        function calculateTax() {
+            if (window.currentNetProfit === undefined) return;
+            const netProfit = window.currentNetProfit;
+            const start = window.currentStart, end = window.currentEnd;
+            const days = (end - start) / (1000 * 60 * 60 * 24) + 1;
+            const periodFactor = Math.min(days / 365, 1);
+            const reliefAnnual = parseFloat(document.getElementById('relief').value) || 0;
+            const reliefPeriod = reliefAnnual * periodFactor;
+            const chargeable = Math.max(netProfit - reliefPeriod, 0);
+            const annualChargeable = chargeable / periodFactor;
+            const annualTax = calcAnnualTax(annualChargeable);
+            const periodTax = annualTax * periodFactor;
+            const taxPaid = parseFloat(document.getElementById('taxPaid').value) || 0;
+            const maxRepay = parseFloat(document.getElementById('maxRepay').value) || 0;
+            const balance = periodTax - taxPaid;
+            let repayMsg = '';
+            if (balance > 0) repayMsg = `Balance Due: RM ${balance.toFixed(2)}`;
+            else if (balance < 0) repayMsg = `Repayment Due (refund): RM ${Math.min(-balance, maxRepay).toFixed(2)} (capped)`;
+            else repayMsg = 'No balance, no repayment.';
+            const netAfterTax = netProfit - periodTax;
+            document.getElementById('taxOutput').innerHTML = `
+                <p><strong>Period Factor:</strong> ${periodFactor.toFixed(4)} (${days} days)</p>
+                <p><strong>Chargeable Income (after relief):</strong> RM ${chargeable.toFixed(2)}</p>
+                <p><strong>Tax Payable (period):</strong> RM ${periodTax.toFixed(2)}</p>
+                <p style="color:#d9534f;"><strong>${repayMsg}</strong></p>
+                <p style="font-size:1.2em;"><strong>🏦 Net Profit After Tax (Actual Salary):</strong> RM ${netAfterTax.toFixed(2)}</p>`;
+            lastReportData = {
+                period: start.toLocaleDateString() + ' – ' + end.toLocaleDateString(),
+                totalSales: totalSales.toFixed(2), totalExpenses: totalExpenses.toFixed(2),
+                netProfit: netProfit.toFixed(2), periodFactor: periodFactor.toFixed(4), days,
+                chargeable: chargeable.toFixed(2), periodTax: periodTax.toFixed(2),
+                taxPaid: taxPaid.toFixed(2), repayMsg, netAfterTax: netAfterTax.toFixed(2)
+            };
+        }
+
+        // ================== EXPORT ==================
+        function exportStyledExcel(dataArray, title, filename, sheetName, colWidths, numberCols = []) {
+            const wb = XLSX.utils.book_new();
+            const now = new Date().toLocaleString();
+            const fullArray = [[title], [`Exported: ${now}`], [], ...dataArray];
+            const ws = XLSX.utils.aoa_to_sheet(fullArray);
+            const maxCols = dataArray[0]?.length || 1;
+            ws['!merges'] = [{ s:{r:0,c:0}, e:{r:0,c:maxCols-1} }];
+            ws['!cols'] = colWidths.map(w => ({ wch: w }));
+            const borderStyle = { top:{style:'thin',color:{rgb:'000000'}}, bottom:{style:'thin',color:{rgb:'000000'}}, left:{style:'thin',color:{rgb:'000000'}}, right:{style:'thin',color:{rgb:'000000'}} };
+            const titleFont = { name:'Calibri', sz:14, bold:true, color:{rgb:'FFFFFF'} };
+            const titleFill = { fgColor:{rgb:'4472C4'} };
+            const headerFont = { name:'Calibri', sz:11, bold:true, color:{rgb:'FFFFFF'} };
+            const headerFill = { fgColor:{rgb:'5B9BD5'} };
+            const dataFont = { name:'Calibri', sz:11 };
+            const dateFont = { name:'Calibri', sz:10, italic:true };
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            for (let R = range.s.r; R <= range.e.r; ++R) {
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    const addr = XLSX.utils.encode_cell({ r:R, c:C });
+                    if (!ws[addr]) continue;
+                    let cell = ws[addr];
+                    if (!cell.s) cell.s={};
+                    if (R === 0) { cell.s.font = titleFont; cell.s.fill = titleFill; cell.s.alignment = { horizontal:'center', vertical:'center' }; cell.s.border={}; }
+                    else if (R === 1) { cell.s.font = dateFont; cell.s.alignment = { horizontal:'left' }; cell.s.border={}; }
+                    else if (R === 2) { cell.s.border={}; }
+                    else if (R === 3) { cell.s.font = headerFont; cell.s.fill = headerFill; cell.s.border = borderStyle; cell.s.alignment = { horizontal:'center', vertical:'center' }; }
+                    else { cell.s.font = dataFont; cell.s.border = borderStyle;
+                        if (numberCols.includes(C) && typeof cell.v === 'number') { cell.s.numFmt = '#,##0.00'; cell.s.alignment = { horizontal:'right' }; }
+                        else { cell.s.alignment = { horizontal:'left' }; }
+                    }
+                }
+            }
+            XLSX.utils.book_append_sheet(wb, ws, sheetName);
+            const wbout = XLSX.write(wb, { bookType:'xlsx', type:'array' });
+            const blob = new Blob([wbout], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename + '.xlsx';
+            document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+        }
+
+        function exportSalesOrders() {
+            const headers = ['Date','Client/Sender','Destination From','Destination To','Vehicle','Gross (RM)','Billing'];
+            const rows = filteredSalesOrders.map(o => [o.date, o.clientSender||'', o.destFrom||'', o.destTo||'', o.vehicle||'', o.gross, o.billing?'Yes':'No']);
+            exportStyledExcel([headers, ...rows], 'Sales Orders Report', 'Sales_Orders', 'Sales Orders', [14,22,22,22,16,14,10], [5]);
+        }
+
+        function exportExpenses() {
+            const headers = ['Bill No','Co name','Date','Description','Amount (RM)'];
+            const rows = filteredExpenses.map(e => [e.billNo||'', e.coName||'', e.date, e.description||'', e.amount]);
+            exportStyledExcel([headers, ...rows], 'Expenses Report', 'Expenses', 'Expenses', [16,22,14,30,14], [4]);
+        }
+
+        function exportReport() {
+            if (!lastReportData) { alert('Please generate a report first.'); return; }
+            const r = lastReportData;
+            const data = [['Section','Details'],['Period',r.period],['Total Sales',r.totalSales],['Total Deductions',r.totalExpenses],['Net Profit (toEarn)',r.netProfit],['',''],['Tax Calculation',''],['Period Factor',`${r.periodFactor} (${r.days} days)`],['Chargeable Income',r.chargeable],['Tax Payable',r.periodTax],['Tax Already Paid',r.taxPaid],['Repayment / Balance',r.repayMsg],['Net Profit After Tax',r.netAfterTax]];
+            exportStyledExcel(data, 'Profit & Tax Report', 'Report_Tax', 'Report & Tax', [25,40], []);
+        }
+
+        // ================== INIT ==================
+        window.onload = async () => {
+            await loadData();
+            // Initialise period input
+            updatePeriodInputs();
+        };
+    </script>
+</body>
+</html>
