@@ -198,46 +198,55 @@
 
         // ================== API HELPERS ==================
         async function loadData() {
-            try {
-                const [salesRes, expRes, customRes] = await Promise.all([
-                    fetch(`${API_URL}?sheet=SalesOrders&action=get`),
-                    fetch(`${API_URL}?sheet=Expenses&action=get`),
-                    fetch(`${API_URL}?sheet=CustomVehicles&action=get`)
-                ]);
-                const salesData = await salesRes.json();
-                const expData = await expRes.json();
-                const customData = await customRes.json();
+    try {
+        const [salesRes, expRes, customRes] = await Promise.all([
+            fetch(`${API_URL}?sheet=SalesOrders&action=get`),
+            fetch(`${API_URL}?sheet=Expenses&action=get`),
+            fetch(`${API_URL}?sheet=CustomVehicles&action=get`)
+        ]);
+        const salesData = await salesRes.json();
+        const expData = await expRes.json();
+        const customData = await customRes.json();
 
-                salesOrders = salesData.map(row => ({
-                    id: Date.now() + Math.random(),
-                    date: row['Date'] || '',
-                    clientSender: row['Client/Sender'] || '',
-                    destFrom: row['Destination From'] || '',
-                    destTo: row['Destination To'] || '',
-                    vehicle: row['Vehicle'] || '',
-                    gross: parseFloat(row['Gross (RM)']) || 0,
-                    billing: row['Billing'] === 'Yes'
-                }));
-                expenses = expData.map(row => ({
-                    id: Date.now() + Math.random(),
-                    billNo: row['Bill No'] || '',
-                    coName: row['Co name'] || '',
-                    date: row['Date'] || '',
-                    description: row['Description'] || '',
-                    amount: parseFloat(row['Amount (RM)']) || 0
-                }));
-                // Custom vehicles are just the first column (Vehicle) of each row (skip header)
-                customVehicles = customData.map(row => row['Vehicle']).filter(v => v && !STANDARD_VEHICLES.includes(v));
-            } catch (e) {
-                console.error('Load failed', e);
-                salesOrders = [];
-                expenses = [];
-                customVehicles = [];
-            }
-            applySalesFilter();
-            applyExpenseFilter();
-            buildVehicleOptions();
-        }
+        // ---- Map SalesOrders columns to the object properties used by the UI ----
+        salesOrders = salesData.map(row => ({
+            id: Date.now() + Math.random(),
+            date: row['Date'] || '',
+            clientSender: row['Client/Sender'] || '',
+            destFrom: row['Destination From'] || '',
+            destTo: row['Destination To'] || '',
+            vehicle: row['Vehicle'] || '',
+            gross: parseFloat(row['Gross (RM)']) || 0,
+            billing: row['Billing'] === 'Yes'   // convert back to boolean
+        }));
+
+        expenses = expData.map(row => ({
+            id: Date.now() + Math.random(),
+            billNo: row['Bill No'] || '',
+            coName: row['Co name'] || '',
+            date: row['Date'] || '',
+            description: row['Description'] || '',
+            amount: parseFloat(row['Amount (RM)']) || 0
+        }));
+
+        customVehicles = customData
+            .map(row => row['Vehicle'])
+            .filter(v => v && !STANDARD_VEHICLES.includes(v));
+
+        // Update the filters and render the tables
+        applySalesFilter();
+        applyExpenseFilter();
+        buildVehicleOptions();
+    } catch (e) {
+        console.error('Load failed', e);
+        salesOrders = [];
+        expenses = [];
+        customVehicles = [];
+        applySalesFilter();
+        applyExpenseFilter();
+        buildVehicleOptions();
+    }
+}
 
         async function saveData() {
             const salesHeaders = ['Date','Client/Sender','Destination From','Destination To','Vehicle','Gross (RM)','Billing'];
