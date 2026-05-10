@@ -8,13 +8,13 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="SS Transport">
     <meta name="mobile-web-app-capable" content="yes">
-    <link rel="manifest" href="data:application/json;base64,...">
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlNTIFRyYW5zcG9ydCBRdW90YXRpb24iLAogICJzaG9ydF9uYW1lIjogIlNTIFRyYW5zcG9ydCIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjZmZmZmZmIiwKICAidGhlbWVfY29sb3IiOiAiIzAwN2JmZiIsCiAgImljb25zIjogW3sKICAgICJzcmMiOiAiZGF0YTppbWFnZS9wbmc7YmFzZTY0LGlWQk9SdzBLR2dvQUFBQ...ICIiwKICAgICJzaXplcyI6ICIxOTJ4MTkyIiwKICAgICJ0eXBlIjogImltYWdlL3BuZyIKICB9XQp9">
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_green.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        /* same styles as before, including multi-delete button */
+        /* existing styles... */
         body { font-family: Arial, sans-serif; max-width: 1100px; margin: auto; padding: 20px; box-sizing: border-box; }
         h1 { margin-bottom: 5px; }
         .tabs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 20px; }
@@ -58,10 +58,31 @@
         .output-block { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-top: 15px; }
         .hidden { display: none; }
         .billing-badge { display: inline-block; background: #28a745; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; }
-        @media (max-width: 600px) { /* same mobile styles */ }
+
+        /* loading spinner overlay */
+        #loadingOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.8); z-index: 9999;
+            display: flex; justify-content: center; align-items: center;
+            flex-direction: column;
+        }
+        .spinner {
+            border: 5px solid #f3f3f3; border-top: 5px solid #007bff;
+            border-radius: 50%; width: 50px; height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loading-text { margin-top: 15px; font-size: 18px; color: #333; }
+
+        @media (max-width: 600px) { /* mobile styles unchanged */ }
     </style>
 </head>
 <body>
+    <div id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text">Loading data, please wait…</div>
+    </div>
+
     <h1>📊 Sales & Net Profit System</h1>
     <p>Create sales orders, log expenses, view net profit, calculate income tax.</p>
     <div class="tabs">
@@ -73,7 +94,6 @@
     <!-- SALES PANEL -->
     <div class="panel active" id="salesPanel">
         <h3 id="salesFormTitle">Create Sales Order</h3>
-        <!-- Form rows unchanged, but ensure flatpickr inits -->
         <div class="form-row" id="orderNoRow" style="display: none;"><label for="soOrderNo">Sales Order No:</label><div class="input-container"><input type="text" id="soOrderNo" readonly style="background:#f0f0f0;"></div></div>
         <div class="form-row"><label for="soDate">Date:</label><div class="input-container"><input type="text" id="soDate" placeholder="dd/mm/yyyy" class="flatpickr-input" readonly></div></div>
         <div class="form-row"><label for="soClientSender">Client/Sender:</label><div class="input-container"><input type="text" id="soClientSender" placeholder="Client/Sender"></div></div>
@@ -183,7 +203,7 @@
     </div>
 
     <script>
-        // ⚠️ Replace this URL with your own Google Apps Script deployment URL
+        // ⚠️ Replace this with your real Apps Script URL
         const API_URL = 'https://script.google.com/macros/s/AKfycbwtCfdJGsUsQ4PKWuLWxB6W7EF9J94YDrgCa8yO7w-MqqNOBVc7fUQrheFGTR94Fr0Sbw/exec';
 
         const STANDARD_VEHICLES = ['10ft Lorry', '14ft Lorry', '17ft Lorry'];
@@ -202,32 +222,58 @@
             { min:2000001, max:Infinity, rate:0.30 }
         ];
 
-        // ========== FLATPICKR INIT ==========
+        // ===================== LOADING SPINNER =====================
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        // ===================== FLATPICKR =====================
         function initFlatpickr() {
             if (typeof flatpickr !== 'undefined') {
-                flatpickr(".flatpickr-input", { dateFormat: "d/m/Y", allowInput: false, altInput: true, altFormat: "d/m/Y" });
+                flatpickr(".flatpickr-input", {
+                    dateFormat: "d/m/Y",
+                    allowInput: false,
+                    altInput: true,
+                    altFormat: "d/m/Y"
+                });
             }
         }
 
-        // ========== DATE HELPERS ==========
-        function displayDate(dateStr) { if (!dateStr) return ''; const [y,m,d] = dateStr.split('-'); return `${d}/${m}/${y}`; }
-        function isoToDisplay(iso) { if (!iso) return ''; return new Date(iso).toLocaleDateString('en-GB'); }
-        function displayToIso(display) { if (!display) return ''; const parts = display.split('/'); if (parts.length===3) return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`; return ''; }
+        // ===================== DATE HELPERS =====================
+        function displayDate(dateStr) {
+            if (!dateStr) return '';
+            const [y,m,d] = dateStr.split('-');
+            return `${d}/${m}/${y}`;
+        }
+        function isoToDisplay(iso) {
+            if (!iso) return '';
+            return new Date(iso).toLocaleDateString('en-GB');
+        }
+        function displayToIso(display) {
+            if (!display) return '';
+            const parts = display.split('/');
+            if (parts.length === 3) return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+            return '';
+        }
 
-        // ========== ORDER NUMBER ==========
+        // ===================== ORDER NUMBER =====================
         function generateOrderNumber() {
             const now = new Date();
             const month = String(now.getMonth()+1).padStart(2,'0');
             const year = String(now.getFullYear()).slice(-2);
             const prefix = `SSSO-${month}${year}-`;
-            const existing = salesOrders.filter(o=>o.orderNumber&&o.orderNumber.startsWith(prefix))
-                                        .map(o=>parseInt(o.orderNumber.split('-').pop(),10)).filter(n=>!isNaN(n));
-            const nextNum = existing.length ? Math.max(...existing)+1 : 1;
+            const existing = salesOrders.filter(o => o.orderNumber && o.orderNumber.startsWith(prefix))
+                                        .map(o => parseInt(o.orderNumber.split('-').pop(),10)).filter(n => !isNaN(n));
+            const nextNum = existing.length ? Math.max(...existing) + 1 : 1;
             return prefix + String(nextNum).padStart(3,'0');
         }
 
-        // ========== LOAD / SAVE ==========
-        async function loadData() {
+        // ===================== DATA LOADING =====================
+        async function loadData(showSpinner = false) {
+            if (showSpinner) showLoading();
             try {
                 const [salesRes, expRes, customRes] = await Promise.all([
                     fetch(`${API_URL}?sheet=SalesOrders&action=get`),
@@ -244,8 +290,9 @@
                     if (isNaN(d.getTime())) return value;
                     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
                 };
+
                 salesOrders = salesData.map(row => ({
-                    id: Date.now()+Math.random(),
+                    id: Date.now() + Math.random(),
                     orderNumber: row['Sales Order No'] || '',
                     date: formatDate(row['Date']),
                     clientSender: row['Client/Sender'] || '',
@@ -256,7 +303,7 @@
                     billing: row['Billing'] === 'Yes'
                 }));
                 expenses = expData.map(row => ({
-                    id: Date.now()+Math.random(),
+                    id: Date.now() + Math.random(),
                     billNo: row['Bill No'] || '',
                     coName: row['Co name'] || '',
                     date: formatDate(row['Date']),
@@ -270,37 +317,43 @@
                 buildVehicleOptions();
             } catch (e) {
                 console.error('Load failed', e);
-                // If still using placeholder URL, show an alert
                 if (API_URL.includes('YOUR_APPS_SCRIPT_URL')) {
-                    alert('Please replace the placeholder API_URL with your real Apps Script deployment URL in the HTML file.');
+                    alert('Please replace the placeholder API_URL with your real Apps Script deployment URL.');
                 }
+            } finally {
+                if (showSpinner) hideLoading();
             }
         }
 
+        // ===================== SAVE DATA =====================
         async function saveData() {
             const salesHeaders = ['Sales Order No','Date','Client/Sender','Destination From','Destination To','Vehicle','Gross (RM)','Billing'];
             const salesArray = salesOrders.map(o => [o.orderNumber, o.date, o.clientSender, o.destFrom, o.destTo, o.vehicle, o.gross, o.billing?'Yes':'No']);
             const expHeaders = ['Bill No','Co name','Date','Description','Amount (RM)'];
             const expArray = expenses.map(e => [e.billNo, e.coName, e.date, e.description, e.amount]);
             await Promise.all([
-                fetch(`${API_URL}?sheet=SalesOrders&action=replace`, { method:'POST', body:JSON.stringify([salesHeaders,...salesArray]) }),
-                fetch(`${API_URL}?sheet=Expenses&action=replace`, { method:'POST', body:JSON.stringify([expHeaders,...expArray]) })
+                fetch(`${API_URL}?sheet=SalesOrders&action=replace`, { method:'POST', body: JSON.stringify([salesHeaders, ...salesArray]) }),
+                fetch(`${API_URL}?sheet=Expenses&action=replace`, { method:'POST', body: JSON.stringify([expHeaders, ...expArray]) })
             ]);
         }
 
         async function saveCustomVehicles() {
             const vehicleHeaders = ['Vehicle'];
             const vehicleArray = customVehicles.map(v => [v]);
-            await fetch(`${API_URL}?sheet=CustomVehicles&action=replace`, { method:'POST', body:JSON.stringify([vehicleHeaders,...vehicleArray]) });
+            await fetch(`${API_URL}?sheet=CustomVehicles&action=replace`, {
+                method: 'POST',
+                body: JSON.stringify([vehicleHeaders, ...vehicleArray])
+            });
         }
 
-        // ========== VEHICLE DROPDOWN ==========
+        // ===================== VEHICLE DROPDOWN =====================
         function buildVehicleOptions(selectedVehicle = null) {
             const select = document.getElementById('soVehicle');
             select.innerHTML = '';
             STANDARD_VEHICLES.forEach(v => select.add(new Option(v, v)));
             customVehicles.forEach(v => select.add(new Option(v, v)));
             select.add(new Option('Others…', '__others__'));
+
             if (selectedVehicle) {
                 if ([...select.options].some(opt => opt.value === selectedVehicle)) {
                     select.value = selectedVehicle;
@@ -334,7 +387,11 @@
 
         function showCustomVehicleInput() { document.getElementById('customVehicleRow').classList.remove('hidden'); }
         function hideCustomVehicleInput() { document.getElementById('customVehicleRow').classList.add('hidden'); document.getElementById('customVehicle').value = ''; }
-        function getSelectedVehicle() { return document.getElementById('soVehicle').value === '__others__' ? document.getElementById('customVehicle').value.trim() : document.getElementById('soVehicle').value; }
+        function getSelectedVehicle() {
+            return document.getElementById('soVehicle').value === '__others__'
+                ? document.getElementById('customVehicle').value.trim()
+                : document.getElementById('soVehicle').value;
+        }
 
         async function saveCustomVehicleIfNew(vehicle) {
             if (!vehicle || vehicle === '__others__') return;
@@ -345,19 +402,21 @@
             }
         }
 
-        // ========== TAB SWITCHING ==========
+        // ===================== TAB SWITCHING =====================
         function switchTab(tabName) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-            document.getElementById(tabName+'Panel').classList.add('active');
+            document.getElementById(tabName + 'Panel').classList.add('active');
             event.target.classList.add('active');
             if (tabName === 'sales') { buildVehicleOptions(); applySalesFilter(); }
             if (tabName === 'expenses') { applyExpenseFilter(); }
         }
 
-        function confirmDelete(message, callback) { if (confirm(message)) callback(); }
+        function confirmDelete(message, callback) {
+            if (confirm(message)) callback();
+        }
 
-        // ========== SALES FILTERS (unchanged) ==========
+        // ===================== FILTERS =====================
         function applySalesFilter() {
             const dateFrom = document.getElementById('salesFilterDateFrom').value;
             const dateTo = document.getElementById('salesFilterDateTo').value;
@@ -365,11 +424,12 @@
             const client = document.getElementById('salesFilterClient').value.toLowerCase().trim();
             const vehicle = document.getElementById('salesFilterVehicle').value;
             const billingOnly = document.getElementById('salesFilterBilling').checked;
+
             filteredSalesOrders = salesOrders.filter(o => {
                 if (dateFrom && o.date < displayToIso(dateFrom)) return false;
                 if (dateTo && o.date > displayToIso(dateTo)) return false;
                 if (orderNo && !o.orderNumber.toLowerCase().includes(orderNo)) return false;
-                if (client && !(o.clientSender||'').toLowerCase().includes(client)) return false;
+                if (client && !(o.clientSender || '').toLowerCase().includes(client)) return false;
                 if (vehicle && o.vehicle !== vehicle) return false;
                 if (billingOnly && !o.billing) return false;
                 return true;
@@ -388,7 +448,6 @@
             renderSalesOrders();
         }
 
-        // ========== EXPENSE FILTERS (unchanged) ==========
         function applyExpenseFilter() {
             const dateFrom = document.getElementById('expFilterDateFrom').value;
             const dateTo = document.getElementById('expFilterDateTo').value;
@@ -396,7 +455,10 @@
             filteredExpenses = expenses.filter(e => {
                 if (dateFrom && e.date < displayToIso(dateFrom)) return false;
                 if (dateTo && e.date > displayToIso(dateTo)) return false;
-                if (search) { const haystack = (e.coName||'')+' '+(e.description||'')+' '+(e.billNo||''); if (!haystack.toLowerCase().includes(search)) return false; }
+                if (search) {
+                    const haystack = (e.coName || '') + ' ' + (e.description || '') + ' ' + (e.billNo || '');
+                    if (!haystack.toLowerCase().includes(search)) return false;
+                }
                 return true;
             });
             renderExpenses();
@@ -410,7 +472,7 @@
             renderExpenses();
         }
 
-        // ========== SALES CRUD (with multi-delete) ==========
+        // ===================== SALES CRUD =====================
         function populateSalesForm(order) {
             document.getElementById('soDate').value = isoToDisplay(order.date);
             document.getElementById('soClientSender').value = order.clientSender || '';
@@ -419,6 +481,7 @@
             document.getElementById('soGross').value = order.gross;
             document.getElementById('soBilling').checked = order.billing || false;
             buildVehicleOptions(order.vehicle);
+
             document.getElementById('orderNoRow').style.display = 'flex';
             document.getElementById('soOrderNo').value = order.orderNumber || '';
         }
@@ -466,11 +529,15 @@
             if (!vehicle && document.getElementById('soVehicle').value === '__others__') return alert('Please enter a custom vehicle type');
 
             let orderData = {
-                date, clientSender: document.getElementById('soClientSender').value,
-                destFrom: document.getElementById('soDestFrom').value, destTo: document.getElementById('soDestTo').value,
-                vehicle, gross: parseFloat(document.getElementById('soGross').value) || 0,
+                date,
+                clientSender: document.getElementById('soClientSender').value,
+                destFrom: document.getElementById('soDestFrom').value,
+                destTo: document.getElementById('soDestTo').value,
+                vehicle,
+                gross: parseFloat(document.getElementById('soGross').value) || 0,
                 billing: document.getElementById('soBilling').checked
             };
+
             if (editingSalesId) {
                 const existing = salesOrders.find(o => o.id === editingSalesId);
                 orderData.orderNumber = existing ? existing.orderNumber : '';
@@ -481,10 +548,17 @@
                 orderData.orderNumber = generateOrderNumber();
                 salesOrders.push({ id: Date.now(), ...orderData });
             }
+
             clearSalesForm();
             buildVehicleOptions();
             applySalesFilter();
-            try { await saveCustomVehicleIfNew(vehicle); await saveData(); } catch(e) { console.warn('Sheet sync failed', e); }
+
+            try {
+                await saveCustomVehicleIfNew(vehicle);
+                await saveData();
+            } catch (e) {
+                console.warn('Sheet sync failed', e);
+            }
         }
 
         async function deleteSalesOrder(id) {
@@ -492,7 +566,7 @@
                 salesOrders = salesOrders.filter(o => o.id !== id);
                 if (editingSalesId === id) cancelEditSales();
                 applySalesFilter();
-                try { await saveData(); } catch(e) {}
+                try { await saveData(); } catch (e) {}
             });
         }
 
@@ -501,12 +575,12 @@
         function renderSalesOrders() {
             const tbody = document.querySelector('#soTable tbody');
             salesSortMode = document.getElementById('soSortMode').value;
-            const sorted = [...filteredSalesOrders].sort((a,b) => {
+            const sorted = [...filteredSalesOrders].sort((a, b) => {
                 const dA = new Date(a.date), dB = new Date(b.date);
-                let primary=0, secondary=0;
+                let primary = 0, secondary = 0;
                 if (salesSortMode === 'date') primary = dA - dB;
-                else if (salesSortMode === 'month') { primary = dA.getMonth()-dB.getMonth(); if(!primary) secondary = dA.getDate()-dB.getDate(); }
-                else if (salesSortMode === 'year') { primary = dA.getFullYear()-dB.getFullYear(); if(!primary) secondary = dA - dB; }
+                else if (salesSortMode === 'month') { primary = dA.getMonth() - dB.getMonth(); if (!primary) secondary = dA.getDate() - dB.getDate(); }
+                else if (salesSortMode === 'year') { primary = dA.getFullYear() - dB.getFullYear(); if (!primary) secondary = dA - dB; }
                 let result = primary !== 0 ? primary : secondary;
                 return salesSortDesc ? -result : result;
             });
@@ -516,15 +590,18 @@
                 const badge = order.billing ? '<span class="billing-badge">Billing</span>' : '';
                 tbody.innerHTML += `<tr>
                     <td><input type="checkbox" class="row-check" data-id="${order.id}"></td>
-                    <td>${order.orderNumber||''}</td>
+                    <td>${order.orderNumber || ''}</td>
                     <td>${displayDate(order.date)}</td>
-                    <td>${order.clientSender||''}</td>
-                    <td>${order.destFrom||''}</td>
-                    <td>${order.destTo||''}</td>
-                    <td>${order.vehicle||''}</td>
+                    <td>${order.clientSender || ''}</td>
+                    <td>${order.destFrom || ''}</td>
+                    <td>${order.destTo || ''}</td>
+                    <td>${order.vehicle || ''}</td>
                     <td>${order.gross.toFixed(2)}</td>
                     <td>${badge}</td>
-                    <td><button class="btn-edit" onclick="editSalesOrder(${order.id})">Edit</button><button class="btn-danger" onclick="deleteSalesOrder(${order.id})">Delete</button></td>
+                    <td>
+                        <button class="btn-edit" onclick="editSalesOrder(${order.id})">Edit</button>
+                        <button class="btn-danger" onclick="deleteSalesOrder(${order.id})">Delete</button>
+                    </td>
                 </tr>`;
             });
             document.getElementById('selectAllSales').checked = false;
@@ -544,7 +621,7 @@
             applySalesFilter();
         }
 
-        // ========== EXPENSE CRUD (with multi-delete) ==========
+        // ===================== EXPENSES CRUD =====================
         function populateExpenseForm(exp) {
             document.getElementById('expBillNo').value = exp.billNo || '';
             document.getElementById('expCoName').value = exp.coName || '';
@@ -588,17 +665,20 @@
             const expenseData = {
                 billNo: document.getElementById('expBillNo').value.trim(),
                 coName: document.getElementById('expCoName').value.trim(),
-                date, description: document.getElementById('expDescription').value.trim(),
+                date,
+                description: document.getElementById('expDescription').value.trim(),
                 amount: parseFloat(document.getElementById('expAmount').value) || 0
             };
             if (editingExpenseId) {
                 const idx = expenses.findIndex(e => e.id === editingExpenseId);
                 if (idx !== -1) Object.assign(expenses[idx], expenseData);
                 cancelEditExpense();
-            } else { expenses.push({ id: Date.now(), ...expenseData }); }
+            } else {
+                expenses.push({ id: Date.now(), ...expenseData });
+            }
             clearExpenseForm();
             applyExpenseFilter();
-            try { await saveData(); } catch(e) { console.warn('Sheet sync failed', e); }
+            try { await saveData(); } catch (e) { console.warn('Sheet sync failed', e); }
         }
 
         async function deleteExpense(id) {
@@ -606,7 +686,7 @@
                 expenses = expenses.filter(e => e.id !== id);
                 if (editingExpenseId === id) cancelEditExpense();
                 applyExpenseFilter();
-                try { await saveData(); } catch(e) {}
+                try { await saveData(); } catch (e) {}
             });
         }
 
@@ -615,12 +695,12 @@
         function renderExpenses() {
             const tbody = document.querySelector('#expTable tbody');
             expensesSortMode = document.getElementById('expSortMode').value;
-            const sorted = [...filteredExpenses].sort((a,b) => {
+            const sorted = [...filteredExpenses].sort((a, b) => {
                 const dA = new Date(a.date), dB = new Date(b.date);
-                let primary=0, secondary=0;
+                let primary = 0, secondary = 0;
                 if (expensesSortMode === 'date') primary = dA - dB;
-                else if (expensesSortMode === 'month') { primary = dA.getMonth()-dB.getMonth(); if(!primary) secondary = dA.getDate()-dB.getDate(); }
-                else if (expensesSortMode === 'year') { primary = dA.getFullYear()-dB.getFullYear(); if(!primary) secondary = dA - dB; }
+                else if (expensesSortMode === 'month') { primary = dA.getMonth() - dB.getMonth(); if (!primary) secondary = dA.getDate() - dB.getDate(); }
+                else if (expensesSortMode === 'year') { primary = dA.getFullYear() - dB.getFullYear(); if (!primary) secondary = dA - dB; }
                 let result = primary !== 0 ? primary : secondary;
                 return expensesSortDesc ? -result : result;
             });
@@ -629,9 +709,15 @@
             sorted.forEach(exp => {
                 tbody.innerHTML += `<tr>
                     <td><input type="checkbox" class="row-check" data-id="${exp.id}"></td>
-                    <td>${exp.billNo}</td><td>${exp.coName}</td><td>${displayDate(exp.date)}</td>
-                    <td>${exp.description}</td><td>${exp.amount.toFixed(2)}</td>
-                    <td><button class="btn-edit" onclick="editExpense(${exp.id})">Edit</button><button class="btn-danger" onclick="deleteExpense(${exp.id})">Delete</button></td>
+                    <td>${exp.billNo}</td>
+                    <td>${exp.coName}</td>
+                    <td>${displayDate(exp.date)}</td>
+                    <td>${exp.description}</td>
+                    <td>${exp.amount.toFixed(2)}</td>
+                    <td>
+                        <button class="btn-edit" onclick="editExpense(${exp.id})">Edit</button>
+                        <button class="btn-danger" onclick="deleteExpense(${exp.id})">Delete</button>
+                    </td>
                 </tr>`;
             });
             document.getElementById('selectAllExpenses').checked = false;
@@ -651,7 +737,7 @@
             applyExpenseFilter();
         }
 
-        // ========== REPORT & TAX (unchanged) ==========
+        // ===================== REPORT & TAX =====================
         function updatePeriodInputs() {
             const type = document.getElementById('periodType').value;
             const container = document.getElementById('periodInputs');
@@ -662,10 +748,103 @@
             initFlatpickr();
         }
 
-        function getPeriodRange() { /* unchanged */ }
-        function generateReport() { /* unchanged */ }
-        function calcAnnualTax(chargeable) { /* unchanged */ }
-        function calculateTax() { /* unchanged */ }
+        function getPeriodRange() {
+            const type = document.getElementById('periodType').value;
+            let start, end;
+            if (type === 'daily') {
+                const val = document.getElementById('singleDate')?.value;
+                if (!val) return null;
+                start = end = new Date(displayToIso(val) + 'T00:00');
+            } else if (type === 'weekly') {
+                const val = document.getElementById('weekStart')?.value;
+                if (!val) return null;
+                start = new Date(displayToIso(val) + 'T00:00');
+                end = new Date(start);
+                end.setDate(start.getDate() + 6);
+            } else if (type === 'monthly') {
+                const val = document.getElementById('monthPicker')?.value;
+                if (!val) return null;
+                const [y, m] = val.split('-').map(Number);
+                start = new Date(y, m - 1, 1);
+                end = new Date(y, m, 0);
+            } else if (type === 'yearly') {
+                const y = document.getElementById('yearInput')?.value;
+                if (!y) return null;
+                start = new Date(y, 0, 1);
+                end = new Date(y, 11, 31);
+            }
+            return { start, end };
+        }
+
+        function isDateInRange(dateStr, start, end) { const d = new Date(dateStr); return d >= start && d <= end; }
+
+        function generateReport() {
+            const range = getPeriodRange();
+            if (!range) return alert('Please fill in the period fields.');
+            const { start, end } = range;
+            const filteredSales = salesOrders.filter(o => isDateInRange(o.date, start, end));
+            const totalSales = filteredSales.reduce((sum, o) => sum + o.gross, 0);
+            const filteredExpenses = expenses.filter(e => isDateInRange(e.date, start, end));
+            const totalExpenses = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
+            const netProfit = totalSales - totalExpenses;
+            document.getElementById('reportOutput').innerHTML = `
+                <p><strong>Period:</strong> ${start.toLocaleDateString('en-GB')} – ${end.toLocaleDateString('en-GB')}</p>
+                <p><strong>Total Sales:</strong> RM ${totalSales.toFixed(2)}</p>
+                <p><strong>Total Deductions (Expenses):</strong> RM ${totalExpenses.toFixed(2)}</p>
+                <p style="font-size:1.2em;"><strong>Net Profit (toEarn):</strong> RM ${netProfit.toFixed(2)}</p>`;
+            window.currentNetProfit = netProfit;
+            window.currentStart = start;
+            window.currentEnd = end;
+            document.getElementById('taxSection').style.display = 'block';
+            calculateTax();
+        }
+
+        function calcAnnualTax(chargeable) {
+            let tax = 0;
+            for (let b of taxBrackets) {
+                if (chargeable > b.min) {
+                    let upper = Math.min(chargeable, b.max);
+                    tax += (upper - b.min + 1) * b.rate;
+                }
+                if (chargeable <= b.max) break;
+            }
+            return tax;
+        }
+
+        function calculateTax() {
+            if (window.currentNetProfit === undefined) return;
+            const netProfit = window.currentNetProfit;
+            const start = window.currentStart, end = window.currentEnd;
+            const days = (end - start) / (1000 * 60 * 60 * 24) + 1;
+            const periodFactor = Math.min(days / 365, 1);
+            const reliefAnnual = parseFloat(document.getElementById('relief').value) || 0;
+            const reliefPeriod = reliefAnnual * periodFactor;
+            const chargeable = Math.max(netProfit - reliefPeriod, 0);
+            const annualChargeable = chargeable / periodFactor;
+            const annualTax = calcAnnualTax(annualChargeable);
+            const periodTax = annualTax * periodFactor;
+            const taxPaid = parseFloat(document.getElementById('taxPaid').value) || 0;
+            const maxRepay = parseFloat(document.getElementById('maxRepay').value) || 0;
+            const balance = periodTax - taxPaid;
+            let repayMsg = '';
+            if (balance > 0) repayMsg = `Balance Due: RM ${balance.toFixed(2)}`;
+            else if (balance < 0) repayMsg = `Repayment Due (refund): RM ${Math.min(-balance, maxRepay).toFixed(2)} (capped)`;
+            else repayMsg = 'No balance, no repayment.';
+            const netAfterTax = netProfit - periodTax;
+            document.getElementById('taxOutput').innerHTML = `
+                <p><strong>Period Factor:</strong> ${periodFactor.toFixed(4)} (${days} days)</p>
+                <p><strong>Chargeable Income (after relief):</strong> RM ${chargeable.toFixed(2)}</p>
+                <p><strong>Tax Payable (period):</strong> RM ${periodTax.toFixed(2)}</p>
+                <p style="color:#d9534f;"><strong>${repayMsg}</strong></p>
+                <p style="font-size:1.2em;"><strong>🏦 Net Profit After Tax (Actual Salary):</strong> RM ${netAfterTax.toFixed(2)}</p>`;
+            lastReportData = {
+                period: start.toLocaleDateString('en-GB') + ' – ' + end.toLocaleDateString('en-GB'),
+                totalSales: totalSales.toFixed(2), totalExpenses: totalExpenses.toFixed(2),
+                netProfit: netProfit.toFixed(2), periodFactor: periodFactor.toFixed(4), days,
+                chargeable: chargeable.toFixed(2), periodTax: periodTax.toFixed(2),
+                taxPaid: taxPaid.toFixed(2), repayMsg, netAfterTax: netAfterTax.toFixed(2)
+            };
+        }
 
         function clearReport() {
             document.getElementById('reportOutput').innerHTML = '<p>Select period and click <strong>Generate Report</strong>.</p>';
@@ -673,20 +852,95 @@
             document.getElementById('taxOutput').innerHTML = '';
         }
 
-        // ========== EXPORT (unchanged, with multi-column) ==========
-        function exportStyledExcel(dataArray, title, filename, sheetName, colWidths, numberCols) { /* unchanged */ }
-        function exportSalesOrders() { /* unchanged */ }
-        function exportExpenses() { /* unchanged */ }
-        function exportReport() { /* unchanged */ }
+        // ===================== EXPORT =====================
+        function exportStyledExcel(dataArray, title, filename, sheetName, colWidths, numberCols = []) {
+            const wb = XLSX.utils.book_new();
+            const now = new Date().toLocaleDateString('en-GB');
+            const fullArray = [[title], [`Exported: ${now}`], [], ...dataArray];
+            const ws = XLSX.utils.aoa_to_sheet(fullArray);
+            const maxCols = dataArray[0]?.length || 1;
+            ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: maxCols - 1 } }];
+            ws['!cols'] = colWidths.map(w => ({ wch: w }));
+            const borderStyle = { top: { style: 'thin', color: { rgb: '000000' } }, bottom: { style: 'thin', color: { rgb: '000000' } }, left: { style: 'thin', color: { rgb: '000000' } }, right: { style: 'thin', color: { rgb: '000000' } } };
+            const titleFont = { name: 'Calibri', sz: 14, bold: true, color: { rgb: 'FFFFFF' } };
+            const titleFill = { fgColor: { rgb: '4472C4' } };
+            const headerFont = { name: 'Calibri', sz: 11, bold: true, color: { rgb: 'FFFFFF' } };
+            const headerFill = { fgColor: { rgb: '5B9BD5' } };
+            const dataFont = { name: 'Calibri', sz: 11 };
+            const dateFont = { name: 'Calibri', sz: 10, italic: true };
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            for (let R = range.s.r; R <= range.e.r; ++R) {
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    const addr = XLSX.utils.encode_cell({ r: R, c: C });
+                    if (!ws[addr]) continue;
+                    let cell = ws[addr];
+                    if (!cell.s) cell.s = {};
+                    if (R === 0) { cell.s.font = titleFont; cell.s.fill = titleFill; cell.s.alignment = { horizontal: 'center', vertical: 'center' }; cell.s.border = {}; }
+                    else if (R === 1) { cell.s.font = dateFont; cell.s.alignment = { horizontal: 'left' }; cell.s.border = {}; }
+                    else if (R === 2) { cell.s.border = {}; }
+                    else if (R === 3) { cell.s.font = headerFont; cell.s.fill = headerFill; cell.s.border = borderStyle; cell.s.alignment = { horizontal: 'center', vertical: 'center' }; }
+                    else {
+                        cell.s.font = dataFont; cell.s.border = borderStyle;
+                        if (numberCols.includes(C) && typeof cell.v === 'number') { cell.s.numFmt = '#,##0.00'; cell.s.alignment = { horizontal: 'right' }; }
+                        else { cell.s.alignment = { horizontal: 'left' }; }
+                    }
+                }
+            }
+            XLSX.utils.book_append_sheet(wb, ws, sheetName);
+            const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+            const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename + '.xlsx';
+            document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+        }
 
-        // ========== AUTO REFRESH ==========
-        async function refreshData() { await loadData(); alert('Data refreshed!'); }
-        setInterval(async () => { try { if (!editingSalesId && !editingExpenseId) await loadData(); } catch(e) {} }, 30000);
+        function exportSalesOrders() {
+            const headers = ['Order No', 'Date', 'Client/Sender', 'Destination From', 'Destination To', 'Vehicle', 'Gross (RM)', 'Billing'];
+            const rows = filteredSalesOrders.map(o => [
+                o.orderNumber, displayDate(o.date), o.clientSender || '', o.destFrom || '',
+                o.destTo || '', o.vehicle || '', o.gross, o.billing ? 'Yes' : 'No'
+            ]);
+            exportStyledExcel([headers, ...rows], 'Sales Orders Report', 'Sales_Orders', 'Sales Orders', [18, 14, 22, 22, 22, 16, 14, 10], [6]);
+        }
 
-        // ========== INIT ==========
+        function exportExpenses() {
+            const headers = ['Bill No', 'Co name', 'Date', 'Description', 'Amount (RM)'];
+            const rows = filteredExpenses.map(e => [
+                e.billNo || '', e.coName || '', displayDate(e.date), e.description || '', e.amount
+            ]);
+            exportStyledExcel([headers, ...rows], 'Expenses Report', 'Expenses', 'Expenses', [16, 22, 14, 30, 14], [4]);
+        }
+
+        function exportReport() {
+            if (!lastReportData) { alert('Please generate a report first.'); return; }
+            const r = lastReportData;
+            const data = [['Section', 'Details'], ['Period', r.period], ['Total Sales', r.totalSales], ['Total Deductions', r.totalExpenses],
+                          ['Net Profit (toEarn)', r.netProfit], ['', ''], ['Tax Calculation', ''], ['Period Factor', `${r.periodFactor} (${r.days} days)`],
+                          ['Chargeable Income', r.chargeable], ['Tax Payable', r.periodTax], ['Tax Already Paid', r.taxPaid],
+                          ['Repayment / Balance', r.repayMsg], ['Net Profit After Tax', r.netAfterTax]];
+            exportStyledExcel(data, 'Profit & Tax Report', 'Report_Tax', 'Report & Tax', [25, 40], []);
+        }
+
+        // ===================== AUTO REFRESH =====================
+        async function refreshData() {
+            await loadData(true);   // show spinner during manual refresh
+            alert('Data refreshed!');
+        }
+
+        // Auto-refresh silently without spinner
+        setInterval(async () => {
+            try {
+                if (!editingSalesId && !editingExpenseId) {
+                    await loadData(false);
+                }
+            } catch (e) {}
+        }, 30000);
+
+        // ===================== INIT =====================
         window.onload = () => {
             initFlatpickr();
-            loadData();
+            loadData(true);   // show spinner on first load
             updatePeriodInputs();
         };
     </script>
