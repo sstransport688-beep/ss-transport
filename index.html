@@ -882,88 +882,150 @@
         }
 
         // ================== IMPORT FUNCTIONS ==================
-        function importSalesXlsx() {
-            const file = document.getElementById('salesImportFile').files[0];
-            if (!file) return alert('Please select an XLSX file.');
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, {type: 'array'});
-                const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-                if (rows.length < 2) return alert('No data found.');
-                // rows[0] = headers, skip that
-                let count = 0;
-                for (let i = 1; i < rows.length; i++) {
-                    const [orderNo, dateStr, client, destFrom, destTo, vehicle, grossStr, billingStr] = rows[i];
-                    if (!orderNo && !dateStr && !client) continue; // skip empty rows
-                    const isoDate = dateStr ? (dateStr.includes('/') ? displayToIso(dateStr) : dateStr) : '';
-                    // Check if order number already exists
-                    if (salesOrders.some(o => o.orderNumber === orderNo)) continue;
-                    const gross = parseFloat(grossStr) || 0;
-                    const billing = billingStr?.toString().toLowerCase() === 'yes';
-                    salesOrders.push({
-                        id: Date.now() + Math.random(),
-                        orderNumber: orderNo || '',
-                        date: isoDate,
-                        clientSender: client || '',
-                        destFrom: destFrom || '',
-                        destTo: destTo || '',
-                        vehicle: vehicle || '',
-                        gross,
-                        billing
-                    });
-                    count++;
-                }
-                if (count > 0) {
-                    saveData().then(() => {
-                        applySalesFilter();
-                        alert(`Imported ${count} sales orders successfully.`);
-                    });
-                } else {
-                    alert('No new records imported (duplicate order numbers skipped).');
-                }
-            };
-            reader.readAsArrayBuffer(file);
+       function importSalesXlsx() {
+    const file = document.getElementById('salesImportFile').files[0];
+    if (!file) return alert('Please select an XLSX file.');
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        if (rows.length < 2) return alert('No data found.');
+
+        // Find the real header row (look for a row where the first cell is "Date" or "Order No")
+        let headerIndex = -1;
+        let hasOrderNo = false;
+        for (let i = 0; i < rows.length; i++) {
+            const firstCell = rows[i][0]?.toString().trim();
+            if (firstCell === 'Order No') {
+                headerIndex = i;
+                hasOrderNo = true;
+                break;
+            } else if (firstCell === 'Date') {
+                headerIndex = i;
+                hasOrderNo = false;
+                break;
+            }
+        }
+        if (headerIndex === -1) return alert('Could not find a valid header row. The file may be corrupted.');
+
+        // Build column index map from header row
+        const headers = rows[headerIndex];
+        const colIndex = {};
+        headers.forEach((h, idx) => {
+            if (h) colIndex[h.trim()] = idx;
+        });
+
+        let count = 0;
+        for (let i = headerIndex + 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row || row.every(cell => !cell)) continue; // skip empty rows
+
+            const orderNo = hasOrderNo ? row[colIndex['Order No']] : generateOrderNumber();
+            const dateStr = row[colIndex['Date']];
+            const client  = row[colIndex['Client/Sender']] || '';
+            const destFrom= row[colIndex['Destination From']] || '';
+            const destTo  = row[colIndex['Destination To']] || '';
+            const vehicle = row[colIndex['Vehicle']] || '';
+            const grossStr = row[colIndex['Gross (RM)']] || row[colIndex['Gross']] || '0';
+            const billingStr = hasOrderNo ? (row[colIndex['Billing']] || '') : '';
+            const billing  = billingStr?.toString().toLowerCase() === 'yes';
+
+            // Convert date (support both dd/mm/yyyy and yyyy-mm-dd)
+            const isoDate = dateStr ? (dateStr.includes('/') ? displayToIso(dateStr) : dateStr) : '';
+            const gross = parseFloat(grossStr) || 0;
+
+            // Skip if order number already exists
+            if (salesOrders.some(o => o.orderNumber === orderNo)) continue;
+
+            salesOrders.push({
+                id: Date.now() + Math.random(),
+                orderNumber: orderNo,
+                date: isoDate,
+                clientSender: client,
+                destFrom,
+                destTo,
+                vehicle,
+                gross,
+                billing
+            });
+            count++;
         }
 
-        function importExpensesXlsx() {
-            const file = document.getElementById('expImportFile').files[0];
-            if (!file) return alert('Please select an XLSX file.');
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, {type: 'array'});
-                const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-                if (rows.length < 2) return alert('No data found.');
-                let count = 0;
-                for (let i = 1; i < rows.length; i++) {
-                    const [billNo, coName, dateStr, description, amountStr] = rows[i];
-                    if (!billNo && !coName && !dateStr) continue;
-                    const isoDate = dateStr ? (dateStr.includes('/') ? displayToIso(dateStr) : dateStr) : '';
-                    const amount = parseFloat(amountStr) || 0;
-                    expenses.push({
-                        id: Date.now() + Math.random(),
-                        billNo: billNo || '',
-                        coName: coName || '',
-                        date: isoDate,
-                        description: description || '',
-                        amount
-                    });
-                    count++;
-                }
-                if (count > 0) {
-                    saveData().then(() => {
-                        applyExpenseFilter();
-                        alert(`Imported ${count} expenses successfully.`);
-                    });
-                } else {
-                    alert('No records imported.');
-                }
-            };
-            reader.readAsArrayBuffer(file);
+        if (count > 0) {
+            saveData().then(() => {
+                applySalesFilter();
+                alert(`Imported ${count} sales orders successfully.`);
+            });
+        } else {
+            alert('No new records imported (all order numbers already exist).');
         }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+        function importExpensesXlsx() {
+    const file = document.getElementById('expImportFile').files[0];
+    if (!file) return alert('Please select an XLSX file.');
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        if (rows.length < 2) return alert('No data found.');
+
+        // Find header row (first cell "Bill No")
+        let headerIndex = -1;
+        for (let i = 0; i < rows.length; i++) {
+            if (rows[i][0]?.toString().trim() === 'Bill No') {
+                headerIndex = i;
+                break;
+            }
+        }
+        if (headerIndex === -1) return alert('Could not find expense header row.');
+
+        const headers = rows[headerIndex];
+        const colIndex = {};
+        headers.forEach((h, idx) => { if (h) colIndex[h.trim()] = idx; });
+
+        let count = 0;
+        for (let i = headerIndex + 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row || row.every(cell => !cell)) continue;
+
+            const billNo    = row[colIndex['Bill No']] || '';
+            const coName    = row[colIndex['Co name']] || '';
+            const dateStr   = row[colIndex['Date']];
+            const description = row[colIndex['Description']] || '';
+            const amountStr = row[colIndex['Amount (RM)']] || row[colIndex['Amount']] || '0';
+
+            const isoDate = dateStr ? (dateStr.includes('/') ? displayToIso(dateStr) : dateStr) : '';
+            const amount = parseFloat(amountStr) || 0;
+
+            expenses.push({
+                id: Date.now() + Math.random(),
+                billNo,
+                coName,
+                date: isoDate,
+                description,
+                amount
+            });
+            count++;
+        }
+
+        if (count > 0) {
+            saveData().then(() => {
+                applyExpenseFilter();
+                alert(`Imported ${count} expenses successfully.`);
+            });
+        } else {
+            alert('No records imported.');
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
 
         // ================== REPORT & TAX (FIXED) ==================
         function updatePeriodInputs() {
