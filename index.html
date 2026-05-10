@@ -197,7 +197,7 @@
         ];
 
         // ================== API HELPERS ==================
-        async function loadData() {
+       async function loadData() {
     try {
         const [salesRes, expRes, customRes] = await Promise.all([
             fetch(`${API_URL}?sheet=SalesOrders&action=get`),
@@ -208,23 +208,33 @@
         const expData = await expRes.json();
         const customData = await customRes.json();
 
-        // ---- Map SalesOrders columns to the object properties used by the UI ----
+        // Helper to convert a date value (ISO string or Date) to YYYY-MM-DD
+        const formatDate = (value) => {
+            if (!value) return '';
+            const d = new Date(value);
+            if (isNaN(d.getTime())) return value; // fallback if not a date
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
         salesOrders = salesData.map(row => ({
             id: Date.now() + Math.random(),
-            date: row['Date'] || '',
+            date: formatDate(row['Date']),
             clientSender: row['Client/Sender'] || '',
             destFrom: row['Destination From'] || '',
             destTo: row['Destination To'] || '',
             vehicle: row['Vehicle'] || '',
             gross: parseFloat(row['Gross (RM)']) || 0,
-            billing: row['Billing'] === 'Yes'   // convert back to boolean
+            billing: row['Billing'] === 'Yes'
         }));
 
         expenses = expData.map(row => ({
             id: Date.now() + Math.random(),
             billNo: row['Bill No'] || '',
             coName: row['Co name'] || '',
-            date: row['Date'] || '',
+            date: formatDate(row['Date']),
             description: row['Description'] || '',
             amount: parseFloat(row['Amount (RM)']) || 0
         }));
@@ -233,7 +243,6 @@
             .map(row => row['Vehicle'])
             .filter(v => v && !STANDARD_VEHICLES.includes(v));
 
-        // Update the filters and render the tables
         applySalesFilter();
         applyExpenseFilter();
         buildVehicleOptions();
@@ -247,7 +256,6 @@
         buildVehicleOptions();
     }
 }
-
         async function saveData() {
             const salesHeaders = ['Date','Client/Sender','Destination From','Destination To','Vehicle','Gross (RM)','Billing'];
             const salesArray = salesOrders.map(o => [o.date, o.clientSender, o.destFrom, o.destTo, o.vehicle, o.gross, o.billing ? 'Yes' : 'No']);
