@@ -11,6 +11,7 @@
     <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlNTIFRyYW5zcG9ydCBRdW90YXRpb24iLAogICJzaG9ydF9uYW1lIjogIlNTIFRyYW5zcG9ydCIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjZmZmZmZmIiwKICAidGhlbWVfY29sb3IiOiAiIzAwN2JmZiIsCiAgImljb25zIjogW3sKICAgICJzcmMiOiAiZGF0YTppbWFnZS9wbmc7YmFzZTY0LGlWQk9SdzBLR2dvQUFBQ...ICIiwKICAgICJzaXplcyI6ICIxOTJ4MTkyIiwKICAgICJ0eXBlIjogImltYWdlL3BuZyIKICB9XQp9">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
+        /* ====== STYLES (unchanged) ====== */
         body { font-family: Arial, sans-serif; max-width: 1100px; margin: auto; padding: 20px; box-sizing: border-box; }
         h1 { margin-bottom: 5px; }
         .tabs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 20px; }
@@ -19,7 +20,6 @@
         .panel { border: 1px solid #ccc; border-radius: 0 8px 8px 8px; padding: 20px; display: none; }
         .panel.active { display: block; }
 
-        /* Flex-row layout for consistent alignment (Sales Order form) */
         .form-row { display: flex; align-items: center; height: 40px; margin-bottom: 10px; max-width: 750px; }
         .form-row label { width: 150px; text-align: right; font-weight: bold; margin-right: 10px; line-height: 40px; }
         .form-row .input-container { flex: 1; display: flex; align-items: center; height: 100%; }
@@ -76,8 +76,17 @@
 
     <!-- SALES PANEL -->
     <div class="panel active" id="salesPanel">
-        <h3>Create Sales Order</h3>
-        <div class="form-row"><label for="soDate">Date:</label><div class="input-container"><input type="date" id="soDate"></div></div>
+        <h3 id="salesFormTitle">Create Sales Order</h3>
+
+        <!-- Order Number row (hidden in create mode) -->
+        <div class="form-row" id="orderNoRow" style="display: none;">
+            <label for="soOrderNo">Sales Order No:</label>
+            <div class="input-container">
+                <input type="text" id="soOrderNo" readonly style="background:#f0f0f0;">
+            </div>
+        </div>
+
+        <div class="form-row"><label for="soDate">Date:</label><div class="input-container"><input type="date" id="soDate" placeholder="dd/mm/yyyy"></div></div>
         <div class="form-row"><label for="soClientSender">Client/Sender:</label><div class="input-container"><input type="text" id="soClientSender" placeholder="Client/Sender"></div></div>
         <div class="form-row"><label for="soDestFrom">Destination From:</label><div class="input-container"><input type="text" id="soDestFrom" placeholder="Pick‑up point"></div></div>
         <div class="form-row"><label for="soDestTo">Destination To:</label><div class="input-container"><input type="text" id="soDestTo" placeholder="Drop‑off point"></div></div>
@@ -85,6 +94,7 @@
         <div class="form-row hidden" id="customVehicleRow"><label for="customVehicle">Custom Type:</label><div class="input-container"><input type="text" id="customVehicle" placeholder="Enter new vehicle type"></div></div>
         <div class="form-row"><label for="soGross">Gross Price (RM):</label><div class="input-container"><input type="number" id="soGross" step="0.01" placeholder="0.00"></div></div>
         <div class="form-row"><label>Billing:</label><div class="input-container checkbox-container"><input type="checkbox" id="soBilling" style="margin:0;"><span style="font-weight:normal;">Mark as billing order</span></div></div>
+
         <div class="btn-group">
             <button class="btn-primary" id="addOrderBtn" onclick="addOrUpdateSalesOrder()">Add Order</button>
             <button class="btn-secondary hidden" id="cancelEditSalesBtn" onclick="cancelEditSales()">Cancel</button>
@@ -93,8 +103,9 @@
 
         <h4>🔍 Filter Sales Orders</h4>
         <div class="filter-bar">
-            <label>Date From:</label><input type="date" id="salesFilterDateFrom">
-            <label>Date To:</label><input type="date" id="salesFilterDateTo">
+            <label>Date From:</label><input type="date" id="salesFilterDateFrom" placeholder="dd/mm/yyyy">
+            <label>Date To:</label><input type="date" id="salesFilterDateTo" placeholder="dd/mm/yyyy">
+            <label>Order No:</label><input type="text" id="salesFilterOrderNo" placeholder="e.g. SSSO-0526-001">
             <label>Client:</label><input type="text" id="salesFilterClient" placeholder="Search client...">
             <label>Vehicle:</label><select id="salesFilterVehicle"><option value="">All Vehicles</option></select>
             <div class="checkbox-wrapper"><input type="checkbox" id="salesFilterBilling"><label for="salesFilterBilling" style="font-weight:normal;">Only billing</label></div>
@@ -106,6 +117,7 @@
         <div class="table-wrapper">
             <table id="soTable">
                 <thead><tr>
+                    <th>Order No</th>
                     <th class="sortable" onclick="sortSalesOrders()"><div class="sort-controls"><span>Date <span class="sort-arrow" id="soSortArrow">▼</span></span><select class="sort-mode-select" id="soSortMode" onclick="event.stopPropagation()" onchange="sortSalesOrders()"><option value="date">Date</option><option value="month">Month</option><option value="year">Year</option></select></div></th>
                     <th>Client/Sender</th><th>Destination From</th><th>Destination To</th><th>Vehicle</th><th>Gross</th><th>Billing</th><th>Action</th>
                 </tr></thead>
@@ -119,7 +131,7 @@
         <h3>Log Expense</h3>
         <div class="form-row"><label for="expBillNo">Bill No:</label><div class="input-container"><input type="text" id="expBillNo" placeholder="Invoice / receipt number"></div></div>
         <div class="form-row"><label for="expCoName">Co name:</label><div class="input-container"><input type="text" id="expCoName" placeholder="Company / supplier name"></div></div>
-        <div class="form-row"><label for="expDate">Date:</label><div class="input-container"><input type="date" id="expDate"></div></div>
+        <div class="form-row"><label for="expDate">Date:</label><div class="input-container"><input type="date" id="expDate" placeholder="dd/mm/yyyy"></div></div>
         <div class="form-row"><label for="expDescription">Description:</label><div class="input-container"><input type="text" id="expDescription" placeholder="e.g. Diesel, Tyre, Fruit supplier..."></div></div>
         <div class="form-row"><label for="expAmount">Amount (RM):</label><div class="input-container"><input type="number" id="expAmount" step="0.01" placeholder="0.00"></div></div>
         <div class="btn-group">
@@ -130,8 +142,8 @@
 
         <h4>🔍 Filter Expenses</h4>
         <div class="filter-bar">
-            <label>Date From:</label><input type="date" id="expFilterDateFrom">
-            <label>Date To:</label><input type="date" id="expFilterDateTo">
+            <label>Date From:</label><input type="date" id="expFilterDateFrom" placeholder="dd/mm/yyyy">
+            <label>Date To:</label><input type="date" id="expFilterDateTo" placeholder="dd/mm/yyyy">
             <label>Search:</label><input type="text" id="expFilterSearch" placeholder="Co name or description">
             <button class="btn-primary" onclick="applyExpenseFilter()">Search</button>
             <button class="btn-clear" onclick="clearExpenseFilter()">Clear</button>
@@ -154,10 +166,11 @@
     <div class="panel" id="reportPanel">
         <h3>Net Profit Report & Tax Calculation</h3>
         <div class="form-row"><label for="periodType">Period:</label><div class="input-container"><select id="periodType" onchange="updatePeriodInputs()"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select></div></div>
-        <div id="periodInputs" class="form-row"><label>Date:</label><div class="input-container"><input type="date" id="singleDate"></div></div>
+        <div id="periodInputs" class="form-row"><label>Date:</label><div class="input-container"><input type="date" id="singleDate" placeholder="dd/mm/yyyy"></div></div>
         <div class="btn-group">
             <button class="btn-primary" onclick="generateReport()">Generate Report</button>
             <button class="btn-export" onclick="exportReport()">📥 Export XLSX</button>
+            <button class="btn-primary" onclick="refreshData()">🔄 Refresh Data</button>
         </div>
         <div id="reportOutput" class="output-block"><p>Select period and click <strong>Generate Report</strong>.</p></div>
         <div id="taxSection" style="display:none;">
@@ -171,10 +184,9 @@
     </div>
 
     <script>
-        // ⚠️ Replace with your own Google Apps Script deployment URL
-        const API_URL = 'https://script.google.com/macros/s/AKfycbw-aFb-7_ABadQjpTHsrerVoXv_Q4L4bJniOjfDuUyYMASgxHy_Qz3c7iu-BSqvaNUTYQ/exec';
+        // ================== CONFIGURATION ==================
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxgxYIwRPlApYtg7v_mvpeqBfCFNxoJa3R7INOqOMHubD-w7VbN9ZrwnxpVrGjM1xGklQ/exec';   // ← Replace with your URL!
 
-        // Standard vehicles plus custom ones loaded from server
         const STANDARD_VEHICLES = ['10ft Lorry', '14ft Lorry', '17ft Lorry'];
         let customVehicles = [];
 
@@ -196,75 +208,103 @@
             { min:2000001, max:Infinity, rate:0.30 }
         ];
 
-        // ================== API HELPERS ==================
-       async function loadData() {
-    try {
-        const [salesRes, expRes, customRes] = await Promise.all([
-            fetch(`${API_URL}?sheet=SalesOrders&action=get`),
-            fetch(`${API_URL}?sheet=Expenses&action=get`),
-            fetch(`${API_URL}?sheet=CustomVehicles&action=get`)
-        ]);
-        const salesData = await salesRes.json();
-        const expData = await expRes.json();
-        const customData = await customRes.json();
+        // ================== ORDER NUMBER GENERATION ==================
+        function generateOrderNumber() {
+            const now = new Date();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const year = String(now.getFullYear()).slice(-2);
+            const prefix = `SSSO-${month}${year}-`;
 
-        // Helper to convert a date value (ISO string or Date) to YYYY-MM-DD
-   const formatDate = (value) => {
-    if (!value) return '';
-    const d = new Date(value);
-    if (isNaN(d.getTime())) return value;
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-};
+            const existing = salesOrders
+                .filter(o => o.orderNumber && o.orderNumber.startsWith(prefix))
+                .map(o => parseInt(o.orderNumber.split('-').pop(), 10))
+                .filter(n => !isNaN(n));
 
-function displayDate(dateStr) {
-    if (!dateStr) return '';
-    const [year, month, day] = dateStr.split('-');
-    return `${day}/${month}/${year}`;
-}
-        
-        salesOrders = salesData.map(row => ({
-            id: Date.now() + Math.random(),
-            date: formatDate(row['Date']),
-            clientSender: row['Client/Sender'] || '',
-            destFrom: row['Destination From'] || '',
-            destTo: row['Destination To'] || '',
-            vehicle: row['Vehicle'] || '',
-            gross: parseFloat(row['Gross (RM)']) || 0,
-            billing: row['Billing'] === 'Yes'
-        }));
+            const nextNum = existing.length > 0 ? Math.max(...existing) + 1 : 1;
+            return prefix + String(nextNum).padStart(3, '0');
+        }
 
-        expenses = expData.map(row => ({
-            id: Date.now() + Math.random(),
-            billNo: row['Bill No'] || '',
-            coName: row['Co name'] || '',
-            date: formatDate(row['Date']),
-            description: row['Description'] || '',
-            amount: parseFloat(row['Amount (RM)']) || 0
-        }));
+        // ================== DATA LOADING ==================
+        async function loadData() {
+            try {
+                const [salesRes, expRes, customRes] = await Promise.all([
+                    fetch(`${API_URL}?sheet=SalesOrders&action=get`),
+                    fetch(`${API_URL}?sheet=Expenses&action=get`),
+                    fetch(`${API_URL}?sheet=CustomVehicles&action=get`)
+                ]);
+                const salesData = await salesRes.json();
+                const expData = await expRes.json();
+                const customData = await customRes.json();
 
-        customVehicles = customData
-            .map(row => row['Vehicle'])
-            .filter(v => v && !STANDARD_VEHICLES.includes(v));
+                const formatDate = (value) => {
+                    if (!value) return '';
+                    const d = new Date(value);
+                    if (isNaN(d.getTime())) return value;
+                    const year = d.getFullYear();
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    const day = String(d.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                };
 
-        applySalesFilter();
-        applyExpenseFilter();
-        buildVehicleOptions();
-    } catch (e) {
-        console.error('Load failed', e);
-        salesOrders = [];
-        expenses = [];
-        customVehicles = [];
-        applySalesFilter();
-        applyExpenseFilter();
-        buildVehicleOptions();
-    }
-}
+                // displayDate helper
+                window.displayDate = (dateStr) => {   // expose globally for export functions
+                    if (!dateStr) return '';
+                    const [year, month, day] = dateStr.split('-');
+                    return `${day}/${month}/${year}`;
+                };
+
+                salesOrders = salesData.map(row => ({
+                    id: Date.now() + Math.random(),
+                    orderNumber: row['Sales Order No'] || '',
+                    date: formatDate(row['Date']),
+                    clientSender: row['Client/Sender'] || '',
+                    destFrom: row['Destination From'] || '',
+                    destTo: row['Destination To'] || '',
+                    vehicle: row['Vehicle'] || '',
+                    gross: parseFloat(row['Gross (RM)']) || 0,
+                    billing: row['Billing'] === 'Yes'
+                }));
+
+                expenses = expData.map(row => ({
+                    id: Date.now() + Math.random(),
+                    billNo: row['Bill No'] || '',
+                    coName: row['Co name'] || '',
+                    date: formatDate(row['Date']),
+                    description: row['Description'] || '',
+                    amount: parseFloat(row['Amount (RM)']) || 0
+                }));
+
+                customVehicles = customData
+                    .map(row => row['Vehicle'])
+                    .filter(v => v && !STANDARD_VEHICLES.includes(v));
+
+                applySalesFilter();
+                applyExpenseFilter();
+                buildVehicleOptions();
+            } catch (e) {
+                console.error('Load failed', e);
+                salesOrders = [];
+                expenses = [];
+                customVehicles = [];
+                applySalesFilter();
+                applyExpenseFilter();
+                buildVehicleOptions();
+            }
+        }
+
+        // ================== DATA SAVING ==================
         async function saveData() {
-            const salesHeaders = ['Date','Client/Sender','Destination From','Destination To','Vehicle','Gross (RM)','Billing'];
-            const salesArray = salesOrders.map(o => [o.date, o.clientSender, o.destFrom, o.destTo, o.vehicle, o.gross, o.billing ? 'Yes' : 'No']);
+            const salesHeaders = ['Sales Order No','Date','Client/Sender','Destination From','Destination To','Vehicle','Gross (RM)','Billing'];
+            const salesArray = salesOrders.map(o => [
+                o.orderNumber,
+                o.date,
+                o.clientSender,
+                o.destFrom,
+                o.destTo,
+                o.vehicle,
+                o.gross,
+                o.billing ? 'Yes' : 'No'
+            ]);
             const expHeaders = ['Bill No','Co name','Date','Description','Amount (RM)'];
             const expArray = expenses.map(e => [e.billNo, e.coName, e.date, e.description, e.amount]);
 
@@ -331,6 +371,7 @@ function displayDate(dateStr) {
             }
         }
 
+        // ================== TAB SWITCHING ==================
         function switchTab(tabName) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -346,12 +387,15 @@ function displayDate(dateStr) {
         function applySalesFilter() {
             const dateFrom = document.getElementById('salesFilterDateFrom').value;
             const dateTo = document.getElementById('salesFilterDateTo').value;
+            const orderNo = document.getElementById('salesFilterOrderNo').value.trim().toLowerCase();
             const client = document.getElementById('salesFilterClient').value.toLowerCase().trim();
             const vehicle = document.getElementById('salesFilterVehicle').value;
             const billingOnly = document.getElementById('salesFilterBilling').checked;
+
             filteredSalesOrders = salesOrders.filter(o => {
                 if (dateFrom && o.date < dateFrom) return false;
                 if (dateTo && o.date > dateTo) return false;
+                if (orderNo && !o.orderNumber.toLowerCase().includes(orderNo)) return false;
                 if (client && !(o.clientSender||'').toLowerCase().includes(client)) return false;
                 if (vehicle && o.vehicle !== vehicle) return false;
                 if (billingOnly && !o.billing) return false;
@@ -363,6 +407,7 @@ function displayDate(dateStr) {
         function clearSalesFilter() {
             document.getElementById('salesFilterDateFrom').value = '';
             document.getElementById('salesFilterDateTo').value = '';
+            document.getElementById('salesFilterOrderNo').value = '';
             document.getElementById('salesFilterClient').value = '';
             document.getElementById('salesFilterVehicle').value = '';
             document.getElementById('salesFilterBilling').checked = false;
@@ -403,6 +448,9 @@ function displayDate(dateStr) {
             document.getElementById('soGross').value = order.gross;
             document.getElementById('soBilling').checked = order.billing || false;
             buildVehicleOptions(order.vehicle);
+
+            document.getElementById('orderNoRow').style.display = 'flex';
+            document.getElementById('soOrderNo').value = order.orderNumber || '';
         }
 
         function clearSalesForm() {
@@ -414,12 +462,15 @@ function displayDate(dateStr) {
             hideCustomVehicleInput();
             document.getElementById('soGross').value = '';
             document.getElementById('soBilling').checked = false;
+            document.getElementById('orderNoRow').style.display = 'none';
+            document.getElementById('soOrderNo').value = '';
         }
 
         function setSalesEditingMode(orderId) {
             editingSalesId = orderId;
             document.getElementById('addOrderBtn').textContent = 'Update Order';
             document.getElementById('cancelEditSalesBtn').classList.remove('hidden');
+            document.getElementById('salesFormTitle').textContent = 'Update Sales Order detail';
         }
 
         function cancelEditSales() {
@@ -427,6 +478,7 @@ function displayDate(dateStr) {
             clearSalesForm();
             document.getElementById('addOrderBtn').textContent = 'Add Order';
             document.getElementById('cancelEditSalesBtn').classList.add('hidden');
+            document.getElementById('salesFormTitle').textContent = 'Create Sales Order';
         }
 
         function editSalesOrder(id) {
@@ -436,87 +488,89 @@ function displayDate(dateStr) {
             setSalesEditingMode(id);
         }
 
-async function addOrUpdateSalesOrder() {
-    const date = document.getElementById('soDate').value;
-    if (!date) return alert('Please select a date');
-    const vehicle = getSelectedVehicle();
-    if (!vehicle && document.getElementById('soVehicle').value === '__others__')
-        return alert('Please enter a custom vehicle type');
+        async function addOrUpdateSalesOrder() {
+            const date = document.getElementById('soDate').value;
+            if (!date) return alert('Please select a date');
+            const vehicle = getSelectedVehicle();
+            if (!vehicle && document.getElementById('soVehicle').value === '__others__')
+                return alert('Please enter a custom vehicle type');
 
-    const orderData = {
-        date,
-        clientSender: document.getElementById('soClientSender').value,
-        destFrom: document.getElementById('soDestFrom').value,
-        destTo: document.getElementById('soDestTo').value,
-        vehicle,
-        gross: parseFloat(document.getElementById('soGross').value) || 0,
-        billing: document.getElementById('soBilling').checked
-    };
+            let orderData = {
+                date,
+                clientSender: document.getElementById('soClientSender').value,
+                destFrom: document.getElementById('soDestFrom').value,
+                destTo: document.getElementById('soDestTo').value,
+                vehicle,
+                gross: parseFloat(document.getElementById('soGross').value) || 0,
+                billing: document.getElementById('soBilling').checked
+            };
 
-    if (editingSalesId) {
-        const idx = salesOrders.findIndex(o => o.id === editingSalesId);
-        if (idx !== -1) salesOrders[idx] = { ...salesOrders[idx], ...orderData };
-        cancelEditSales();
-    } else {
-        salesOrders.push({ id: Date.now(), ...orderData });
-    }
+            if (editingSalesId) {
+                const existing = salesOrders.find(o => o.id === editingSalesId);
+                orderData.orderNumber = existing ? existing.orderNumber : '';
+                const idx = salesOrders.findIndex(o => o.id === editingSalesId);
+                if (idx !== -1) salesOrders[idx] = { ...salesOrders[idx], ...orderData };
+                cancelEditSales();
+            } else {
+                orderData.orderNumber = generateOrderNumber();
+                salesOrders.push({ id: Date.now(), ...orderData });
+            }
 
-    // Immediately update the UI (table)
-    clearSalesForm();
-    buildVehicleOptions();
-    applySalesFilter();
+            clearSalesForm();
+            buildVehicleOptions();
+            applySalesFilter();
 
-    // Then try to sync with the Sheet (if it fails, the UI still works)
-    try {
-        await saveCustomVehicleIfNew(vehicle);
-        await saveData();
-    } catch (e) {
-        console.warn('Sheet sync failed – data only saved locally.', e);
-    }
-}
+            try {
+                await saveCustomVehicleIfNew(vehicle);
+                await saveData();
+            } catch (e) {
+                console.warn('Sheet sync failed – data only saved locally.', e);
+            }
+        }
 
-async function deleteSalesOrder(id) {
-    confirmDelete('Are you sure you want to delete this sales order?', async () => {
-        salesOrders = salesOrders.filter(o => o.id !== id);
-        if (editingSalesId === id) cancelEditSales();
-        applySalesFilter();
-        try { await saveData(); } catch(e) { console.warn('Delete sync failed', e); }
-    });
-}
+        async function deleteSalesOrder(id) {
+            confirmDelete('Are you sure you want to delete this sales order?', async () => {
+                salesOrders = salesOrders.filter(o => o.id !== id);
+                if (editingSalesId === id) cancelEditSales();
+                applySalesFilter();
+                try { await saveData(); } catch(e) { console.warn('Delete sync failed', e); }
+            });
+        }
 
         function sortSalesOrders() { salesSortDesc = !salesSortDesc; renderSalesOrders(); }
 
-       function renderSalesOrders() {
-    const tbody = document.querySelector('#soTable tbody');
-    salesSortMode = document.getElementById('soSortMode').value;
-    const sorted = [...filteredSalesOrders].sort((a, b) => {
-        const dA = new Date(a.date), dB = new Date(b.date);
-        let primary = 0, secondary = 0;
-        if (salesSortMode === 'date') primary = dA - dB;
-        else if (salesSortMode === 'month') { primary = dA.getMonth() - dB.getMonth(); if (primary === 0) secondary = dA.getDate() - dB.getDate(); }
-        else if (salesSortMode === 'year') { primary = dA.getFullYear() - dB.getFullYear(); if (primary === 0) secondary = dA - dB; }
-        let result = primary !== 0 ? primary : secondary;
-        return salesSortDesc ? -result : result;
-    });
-    document.getElementById('soSortArrow').textContent = salesSortDesc ? '▼' : '▲';
-    tbody.innerHTML = '';
-    sorted.forEach(order => {
-        const badge = order.billing ? '<span class="billing-badge">Billing</span>' : '';
-        tbody.innerHTML += `<tr>
-            <td>${displayDate(order.date)}</td>
-            <td>${order.clientSender || ''}</td>
-            <td>${order.destFrom || ''}</td>
-            <td>${order.destTo || ''}</td>
-            <td>${order.vehicle || ''}</td>
-            <td>${order.gross.toFixed(2)}</td>
-            <td>${badge}</td>
-            <td>
-                <button class="btn-edit" onclick="editSalesOrder(${order.id})">Edit</button>
-                <button class="btn-danger" onclick="deleteSalesOrder(${order.id})">Delete</button>
-            </td>
-        </tr>`;
-    });
-}
+        function renderSalesOrders() {
+            const tbody = document.querySelector('#soTable tbody');
+            salesSortMode = document.getElementById('soSortMode').value;
+            const sorted = [...filteredSalesOrders].sort((a, b) => {
+                const dA = new Date(a.date), dB = new Date(b.date);
+                let primary = 0, secondary = 0;
+                if (salesSortMode === 'date') primary = dA - dB;
+                else if (salesSortMode === 'month') { primary = dA.getMonth() - dB.getMonth(); if (primary === 0) secondary = dA.getDate() - dB.getDate(); }
+                else if (salesSortMode === 'year') { primary = dA.getFullYear() - dB.getFullYear(); if (primary === 0) secondary = dA - dB; }
+                let result = primary !== 0 ? primary : secondary;
+                return salesSortDesc ? -result : result;
+            });
+            document.getElementById('soSortArrow').textContent = salesSortDesc ? '▼' : '▲';
+            tbody.innerHTML = '';
+            sorted.forEach(order => {
+                const badge = order.billing ? '<span class="billing-badge">Billing</span>' : '';
+                tbody.innerHTML += `<tr>
+                    <td>${order.orderNumber || ''}</td>
+                    <td>${displayDate(order.date)}</td>
+                    <td>${order.clientSender || ''}</td>
+                    <td>${order.destFrom || ''}</td>
+                    <td>${order.destTo || ''}</td>
+                    <td>${order.vehicle || ''}</td>
+                    <td>${order.gross.toFixed(2)}</td>
+                    <td>${badge}</td>
+                    <td>
+                        <button class="btn-edit" onclick="editSalesOrder(${order.id})">Edit</button>
+                        <button class="btn-danger" onclick="deleteSalesOrder(${order.id})">Delete</button>
+                    </td>
+                </tr>`;
+            });
+        }
 
         // ================== EXPENSES ==================
         function populateExpenseForm(exp) {
@@ -556,78 +610,74 @@ async function deleteSalesOrder(id) {
         }
 
         async function addOrUpdateExpense() {
-    const date = document.getElementById('expDate').value;
-    if (!date) return alert('Please select a date');
-    const expenseData = {
-        billNo: document.getElementById('expBillNo').value.trim(),
-        coName: document.getElementById('expCoName').value.trim(),
-        date,
-        description: document.getElementById('expDescription').value.trim(),
-        amount: parseFloat(document.getElementById('expAmount').value) || 0
-    };
-    if (editingExpenseId) {
-        const idx = expenses.findIndex(e => e.id === editingExpenseId);
-        if (idx !== -1) Object.assign(expenses[idx], expenseData);
-        cancelEditExpense();
-    } else {
-        expenses.push({ id: Date.now(), ...expenseData });
-    }
-    clearExpenseForm();
-    applyExpenseFilter();
+            const date = document.getElementById('expDate').value;
+            if (!date) return alert('Please select a date');
+            const expenseData = {
+                billNo: document.getElementById('expBillNo').value.trim(),
+                coName: document.getElementById('expCoName').value.trim(),
+                date,
+                description: document.getElementById('expDescription').value.trim(),
+                amount: parseFloat(document.getElementById('expAmount').value) || 0
+            };
+            if (editingExpenseId) {
+                const idx = expenses.findIndex(e => e.id === editingExpenseId);
+                if (idx !== -1) Object.assign(expenses[idx], expenseData);
+                cancelEditExpense();
+            } else {
+                expenses.push({ id: Date.now(), ...expenseData });
+            }
+            clearExpenseForm();
+            applyExpenseFilter();
 
-    try {
-        await saveData();
-    } catch (e) {
-        console.warn('Sheet sync failed – data only saved locally.', e);
-    }
-}
+            try { await saveData(); } catch (e) { console.warn('Sheet sync failed – data only saved locally.', e); }
+        }
 
- async function deleteExpense(id) {
-    confirmDelete('Are you sure you want to delete this expense?', async () => {
-        expenses = expenses.filter(e => e.id !== id);
-        if (editingExpenseId === id) cancelEditExpense();
-        applyExpenseFilter();
-        try { await saveData(); } catch(e) { console.warn('Delete sync failed', e); }
-    });
-}
+        async function deleteExpense(id) {
+            confirmDelete('Are you sure you want to delete this expense?', async () => {
+                expenses = expenses.filter(e => e.id !== id);
+                if (editingExpenseId === id) cancelEditExpense();
+                applyExpenseFilter();
+                try { await saveData(); } catch(e) { console.warn('Delete sync failed', e); }
+            });
+        }
 
         function sortExpenses() { expensesSortDesc = !expensesSortDesc; renderExpenses(); }
 
         function renderExpenses() {
-    const tbody = document.querySelector('#expTable tbody');
-    expensesSortMode = document.getElementById('expSortMode').value;
-    const sorted = [...filteredExpenses].sort((a, b) => {
-        const dA = new Date(a.date), dB = new Date(b.date);
-        let primary = 0, secondary = 0;
-        if (expensesSortMode === 'date') primary = dA - dB;
-        else if (expensesSortMode === 'month') { primary = dA.getMonth() - dB.getMonth(); if (primary === 0) secondary = dA.getDate() - dB.getDate(); }
-        else if (expensesSortMode === 'year') { primary = dA.getFullYear() - dB.getFullYear(); if (primary === 0) secondary = dA - dB; }
-        let result = primary !== 0 ? primary : secondary;
-        return expensesSortDesc ? -result : result;
-    });
-    document.getElementById('expSortArrow').textContent = expensesSortDesc ? '▼' : '▲';
-    tbody.innerHTML = '';
-    sorted.forEach(exp => {
-        tbody.innerHTML += `<tr>
-            <td>${exp.billNo}</td>
-            <td>${exp.coName}</td>
-            <td>${displayDate(exp.date)}</td>
-            <td>${exp.description}</td>
-            <td>${exp.amount.toFixed(2)}</td>
-            <td>
-                <button class="btn-edit" onclick="editExpense(${exp.id})">Edit</button>
-                <button class="btn-danger" onclick="deleteExpense(${exp.id})">Delete</button>
-            </td>
-        </tr>`;
-    });
-}
+            const tbody = document.querySelector('#expTable tbody');
+            expensesSortMode = document.getElementById('expSortMode').value;
+            const sorted = [...filteredExpenses].sort((a, b) => {
+                const dA = new Date(a.date), dB = new Date(b.date);
+                let primary = 0, secondary = 0;
+                if (expensesSortMode === 'date') primary = dA - dB;
+                else if (expensesSortMode === 'month') { primary = dA.getMonth() - dB.getMonth(); if (primary === 0) secondary = dA.getDate() - dB.getDate(); }
+                else if (expensesSortMode === 'year') { primary = dA.getFullYear() - dB.getFullYear(); if (primary === 0) secondary = dA - dB; }
+                let result = primary !== 0 ? primary : secondary;
+                return expensesSortDesc ? -result : result;
+            });
+            document.getElementById('expSortArrow').textContent = expensesSortDesc ? '▼' : '▲';
+            tbody.innerHTML = '';
+            sorted.forEach(exp => {
+                tbody.innerHTML += `<tr>
+                    <td>${exp.billNo}</td>
+                    <td>${exp.coName}</td>
+                    <td>${displayDate(exp.date)}</td>
+                    <td>${exp.description}</td>
+                    <td>${exp.amount.toFixed(2)}</td>
+                    <td>
+                        <button class="btn-edit" onclick="editExpense(${exp.id})">Edit</button>
+                        <button class="btn-danger" onclick="deleteExpense(${exp.id})">Delete</button>
+                    </td>
+                </tr>`;
+            });
+        }
 
         // ================== REPORT & TAX ==================
         function updatePeriodInputs() {
             const type = document.getElementById('periodType').value;
             const container = document.getElementById('periodInputs');
-            if (type === 'daily') container.innerHTML = `<label>Date:</label><div class="input-container"><input type="date" id="singleDate"></div>`;
-            else if (type === 'weekly') container.innerHTML = `<label>Week start (Monday):</label><div class="input-container"><input type="date" id="weekStart"></div>`;
+            if (type === 'daily') container.innerHTML = `<label>Date:</label><div class="input-container"><input type="date" id="singleDate" placeholder="dd/mm/yyyy"></div>`;
+            else if (type === 'weekly') container.innerHTML = `<label>Week start (Monday):</label><div class="input-container"><input type="date" id="weekStart" placeholder="dd/mm/yyyy"></div>`;
             else if (type === 'monthly') container.innerHTML = `<label>Month:</label><div class="input-container"><input type="month" id="monthPicker"></div>`;
             else if (type === 'yearly') container.innerHTML = `<label>Year:</label><div class="input-container"><input type="number" id="yearInput" value="${new Date().getFullYear()}" min="2000" max="2100"></div>`;
         }
@@ -749,28 +799,29 @@ async function deleteSalesOrder(id) {
         }
 
         function exportSalesOrders() {
-            const headers = ['Date','Client/Sender','Destination From','Destination To','Vehicle','Gross (RM)','Billing'];
+            const headers = ['Order No','Date','Client/Sender','Destination From','Destination To','Vehicle','Gross (RM)','Billing'];
             const rows = filteredSalesOrders.map(o => [
-    displayDate(o.date),   // ← changed
-    o.clientSender || '',
-    o.destFrom || '',
-    o.destTo || '',
-    o.vehicle || '',
-    o.gross,
-    o.billing ? 'Yes' : 'No'
-]);
-            exportStyledExcel([headers, ...rows], 'Sales Orders Report', 'Sales_Orders', 'Sales Orders', [14,22,22,22,16,14,10], [5]);
+                o.orderNumber,
+                displayDate(o.date),
+                o.clientSender || '',
+                o.destFrom || '',
+                o.destTo || '',
+                o.vehicle || '',
+                o.gross,
+                o.billing ? 'Yes' : 'No'
+            ]);
+            exportStyledExcel([headers, ...rows], 'Sales Orders Report', 'Sales_Orders', 'Sales Orders', [18,14,22,22,22,16,14,10], [6]);
         }
 
         function exportExpenses() {
             const headers = ['Bill No','Co name','Date','Description','Amount (RM)'];
             const rows = filteredExpenses.map(e => [
-    e.billNo || '',
-    e.coName || '',
-    displayDate(e.date),   // ← changed
-    e.description || '',
-    e.amount
-]);
+                e.billNo || '',
+                e.coName || '',
+                displayDate(e.date),
+                e.description || '',
+                e.amount
+            ]);
             exportStyledExcel([headers, ...rows], 'Expenses Report', 'Expenses', 'Expenses', [16,22,14,30,14], [4]);
         }
 
@@ -781,10 +832,23 @@ async function deleteSalesOrder(id) {
             exportStyledExcel(data, 'Profit & Tax Report', 'Report_Tax', 'Report & Tax', [25,40], []);
         }
 
-        // ================== INIT ==================
+        // ================== AUTO REFRESH + MANUAL REFRESH ==================
+        async function refreshData() {
+            await loadData();
+            alert('Data refreshed!');
+        }
+
+        setInterval(async () => {
+            try {
+                if (!editingSalesId && !editingExpenseId) {
+                    await loadData();
+                }
+            } catch (e) { console.warn('Auto-refresh failed', e); }
+        }, 30000);
+
+        // ================== INITIALISATION ==================
         window.onload = async () => {
             await loadData();
-            // Initialise period input
             updatePeriodInputs();
         };
     </script>
