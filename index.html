@@ -45,6 +45,7 @@
 
         /* Filter bar */
        /* Improved filter bar layout */
+/* ===== Filter Bar & Import Row (replaces old filter-row styles) ===== */
 .filter-bar {
     background: #f8f9fa;
     border: 1px solid #ddd;
@@ -57,7 +58,7 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 8px;                    /* reduced from 10px for tighter alignment */
+    gap: 8px;
     margin-bottom: 8px;
 }
 
@@ -69,29 +70,26 @@
     font-weight: bold;
     font-size: 0.9em;
     white-space: nowrap;
-    width: 90px;                 /* fixed label width for perfect alignment */
+    width: 90px;
     text-align: right;
     margin-right: 2px;
 }
 
-/* Inputs, selects, and file input */
 .filter-row input[type="text"],
 .filter-row .flatpickr-input,
 .filter-row select,
 .filter-row input[type="file"] {
     padding: 6px;
     font-size: 0.9em;
-    width: 130px;               /* match original width */
+    width: 130px;
     box-sizing: border-box;
 }
 
-/* Year input slightly narrower */
 .filter-row input[type="number"],
 #salesFilterYear {
     width: 100px;
 }
 
-/* Checkbox wrapper */
 .filter-row .checkbox-wrapper {
     display: flex;
     align-items: center;
@@ -103,7 +101,7 @@
     margin-left: 4px;
 }
 
-/* Import row – matches filter rows exactly */
+/* Import row – identical layout to filter rows */
 .import-row {
     display: flex;
     flex-wrap: wrap;
@@ -111,6 +109,7 @@
     gap: 8px;
     margin-bottom: 10px;
 }
+
 .import-row label {
     font-weight: bold;
     font-size: 0.9em;
@@ -118,10 +117,34 @@
     text-align: right;
     margin-right: 2px;
 }
+
 .import-row input[type="file"] {
     padding: 4px;
     font-size: 0.9em;
     width: 200px;
+}
+
+/* Mobile stacking */
+@media (max-width: 600px) {
+    .filter-row,
+    .import-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+    }
+    .filter-row label,
+    .import-row label {
+        width: 100%;
+        text-align: left;
+        margin-right: 0;
+    }
+    .filter-row input[type="text"],
+    .filter-row .flatpickr-input,
+    .filter-row select,
+    .filter-row input[type="file"],
+    .import-row input[type="file"] {
+        width: 100%;
+    }
 }
 
         /* Tables */
@@ -242,11 +265,11 @@
         </div>
 
         <!-- Import old XLSX -->
-        <div class="filter-row" style="margin-bottom:10px;">
-            <label style="min-width:auto; margin-left:0;">Import Sales XLSX:</label>
-            <input type="file" id="salesImportFile" accept=".xlsx, .xls" style="width:200px;">
-            <button class="btn-primary" onclick="importSalesXlsx()">📥 Import</button>
-        </div>
+       <div class="import-row">
+    <label>Import Sales XLSX:</label>
+    <input type="file" id="salesImportFile" accept=".xlsx, .xls" style="width: 200px;">
+    <button class="btn-primary" onclick="importSalesXlsx()">📥 Import</button>
+</div>
 
         <h4>All Sales Orders</h4>
         <div class="table-wrapper">
@@ -288,11 +311,11 @@
             </div>
         </div>
 
-        <div class="filter-row" style="margin-bottom:10px;">
-            <label style="min-width:auto; margin-left:0;">Import Expense XLSX:</label>
-            <input type="file" id="expImportFile" accept=".xlsx, .xls" style="width:200px;">
-            <button class="btn-primary" onclick="importExpensesXlsx()">📥 Import</button>
-        </div>
+        <div class="import-row">
+    <label>Import Expense XLSX:</label>
+    <input type="file" id="expImportFile" accept=".xlsx, .xls" style="width: 200px;">
+    <button class="btn-primary" onclick="importExpensesXlsx()">📥 Import</button>
+</div>
 
         <h4>All Expenses</h4>
         <div class="table-wrapper">
