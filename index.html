@@ -209,16 +209,22 @@
         const customData = await customRes.json();
 
         // Helper to convert a date value (ISO string or Date) to YYYY-MM-DD
-     const formatDate = (value) => {
+   const formatDate = (value) => {
     if (!value) return '';
     const d = new Date(value);
     if (isNaN(d.getTime())) return value;
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
     const year = d.getFullYear();
-    return `${day}/${month}/${year}`;
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 };
 
+function displayDate(dateStr) {
+    if (!dateStr) return '';
+    const [year, month, day] = dateStr.split('-');
+    return `${day}/${month}/${year}`;
+}
+        
         salesOrders = salesData.map(row => ({
             id: Date.now() + Math.random(),
             date: formatDate(row['Date']),
@@ -480,30 +486,37 @@ async function deleteSalesOrder(id) {
 
         function sortSalesOrders() { salesSortDesc = !salesSortDesc; renderSalesOrders(); }
 
-        function renderSalesOrders() {
-            const tbody = document.querySelector('#soTable tbody');
-            salesSortMode = document.getElementById('soSortMode').value;
-            const sorted = [...filteredSalesOrders].sort((a, b) => {
-                const dA = new Date(a.date), dB = new Date(b.date);
-                let primary = 0, secondary = 0;
-                if (salesSortMode === 'date') primary = dA - dB;
-                else if (salesSortMode === 'month') { primary = dA.getMonth() - dB.getMonth(); if (primary === 0) secondary = dA.getDate() - dB.getDate(); }
-                else if (salesSortMode === 'year') { primary = dA.getFullYear() - dB.getFullYear(); if (primary === 0) secondary = dA - dB; }
-                let result = primary !== 0 ? primary : secondary;
-                return salesSortDesc ? -result : result;
-            });
-            document.getElementById('soSortArrow').textContent = salesSortDesc ? '▼' : '▲';
-            tbody.innerHTML = '';
-            sorted.forEach(order => {
-                const badge = order.billing ? '<span class="billing-badge">Billing</span>' : '';
-                tbody.innerHTML += `<tr>
-                    <td>${order.date}</td><td>${order.clientSender||''}</td><td>${order.destFrom||''}</td><td>${order.destTo||''}</td>
-                    <td>${order.vehicle||''}</td><td>${order.gross.toFixed(2)}</td><td>${badge}</td>
-                    <td><button class="btn-edit" onclick="editSalesOrder(${order.id})">Edit</button>
-                    <button class="btn-danger" onclick="deleteSalesOrder(${order.id})">Delete</button></td>
-                </tr>`;
-            });
-        }
+       function renderSalesOrders() {
+    const tbody = document.querySelector('#soTable tbody');
+    salesSortMode = document.getElementById('soSortMode').value;
+    const sorted = [...filteredSalesOrders].sort((a, b) => {
+        const dA = new Date(a.date), dB = new Date(b.date);
+        let primary = 0, secondary = 0;
+        if (salesSortMode === 'date') primary = dA - dB;
+        else if (salesSortMode === 'month') { primary = dA.getMonth() - dB.getMonth(); if (primary === 0) secondary = dA.getDate() - dB.getDate(); }
+        else if (salesSortMode === 'year') { primary = dA.getFullYear() - dB.getFullYear(); if (primary === 0) secondary = dA - dB; }
+        let result = primary !== 0 ? primary : secondary;
+        return salesSortDesc ? -result : result;
+    });
+    document.getElementById('soSortArrow').textContent = salesSortDesc ? '▼' : '▲';
+    tbody.innerHTML = '';
+    sorted.forEach(order => {
+        const badge = order.billing ? '<span class="billing-badge">Billing</span>' : '';
+        tbody.innerHTML += `<tr>
+            <td>${displayDate(order.date)}</td>
+            <td>${order.clientSender || ''}</td>
+            <td>${order.destFrom || ''}</td>
+            <td>${order.destTo || ''}</td>
+            <td>${order.vehicle || ''}</td>
+            <td>${order.gross.toFixed(2)}</td>
+            <td>${badge}</td>
+            <td>
+                <button class="btn-edit" onclick="editSalesOrder(${order.id})">Edit</button>
+                <button class="btn-danger" onclick="deleteSalesOrder(${order.id})">Delete</button>
+            </td>
+        </tr>`;
+    });
+}
 
         // ================== EXPENSES ==================
         function populateExpenseForm(exp) {
@@ -581,28 +594,33 @@ async function deleteSalesOrder(id) {
         function sortExpenses() { expensesSortDesc = !expensesSortDesc; renderExpenses(); }
 
         function renderExpenses() {
-            const tbody = document.querySelector('#expTable tbody');
-            expensesSortMode = document.getElementById('expSortMode').value;
-            const sorted = [...filteredExpenses].sort((a, b) => {
-                const dA = new Date(a.date), dB = new Date(b.date);
-                let primary = 0, secondary = 0;
-                if (expensesSortMode === 'date') primary = dA - dB;
-                else if (expensesSortMode === 'month') { primary = dA.getMonth() - dB.getMonth(); if (primary === 0) secondary = dA.getDate() - dB.getDate(); }
-                else if (expensesSortMode === 'year') { primary = dA.getFullYear() - dB.getFullYear(); if (primary === 0) secondary = dA - dB; }
-                let result = primary !== 0 ? primary : secondary;
-                return expensesSortDesc ? -result : result;
-            });
-            document.getElementById('expSortArrow').textContent = expensesSortDesc ? '▼' : '▲';
-            tbody.innerHTML = '';
-            sorted.forEach(exp => {
-                tbody.innerHTML += `<tr>
-                    <td>${exp.billNo||''}</td><td>${exp.coName||''}</td><td>${exp.date}</td><td>${exp.description||''}</td>
-                    <td>${exp.amount.toFixed(2)}</td>
-                    <td><button class="btn-edit" onclick="editExpense(${exp.id})">Edit</button>
-                    <button class="btn-danger" onclick="deleteExpense(${exp.id})">Delete</button></td>
-                </tr>`;
-            });
-        }
+    const tbody = document.querySelector('#expTable tbody');
+    expensesSortMode = document.getElementById('expSortMode').value;
+    const sorted = [...filteredExpenses].sort((a, b) => {
+        const dA = new Date(a.date), dB = new Date(b.date);
+        let primary = 0, secondary = 0;
+        if (expensesSortMode === 'date') primary = dA - dB;
+        else if (expensesSortMode === 'month') { primary = dA.getMonth() - dB.getMonth(); if (primary === 0) secondary = dA.getDate() - dB.getDate(); }
+        else if (expensesSortMode === 'year') { primary = dA.getFullYear() - dB.getFullYear(); if (primary === 0) secondary = dA - dB; }
+        let result = primary !== 0 ? primary : secondary;
+        return expensesSortDesc ? -result : result;
+    });
+    document.getElementById('expSortArrow').textContent = expensesSortDesc ? '▼' : '▲';
+    tbody.innerHTML = '';
+    sorted.forEach(exp => {
+        tbody.innerHTML += `<tr>
+            <td>${exp.billNo}</td>
+            <td>${exp.coName}</td>
+            <td>${displayDate(exp.date)}</td>
+            <td>${exp.description}</td>
+            <td>${exp.amount.toFixed(2)}</td>
+            <td>
+                <button class="btn-edit" onclick="editExpense(${exp.id})">Edit</button>
+                <button class="btn-danger" onclick="deleteExpense(${exp.id})">Delete</button>
+            </td>
+        </tr>`;
+    });
+}
 
         // ================== REPORT & TAX ==================
         function updatePeriodInputs() {
@@ -732,13 +750,27 @@ async function deleteSalesOrder(id) {
 
         function exportSalesOrders() {
             const headers = ['Date','Client/Sender','Destination From','Destination To','Vehicle','Gross (RM)','Billing'];
-            const rows = filteredSalesOrders.map(o => [o.date, o.clientSender||'', o.destFrom||'', o.destTo||'', o.vehicle||'', o.gross, o.billing?'Yes':'No']);
+            const rows = filteredSalesOrders.map(o => [
+    displayDate(o.date),   // ← changed
+    o.clientSender || '',
+    o.destFrom || '',
+    o.destTo || '',
+    o.vehicle || '',
+    o.gross,
+    o.billing ? 'Yes' : 'No'
+]);
             exportStyledExcel([headers, ...rows], 'Sales Orders Report', 'Sales_Orders', 'Sales Orders', [14,22,22,22,16,14,10], [5]);
         }
 
         function exportExpenses() {
             const headers = ['Bill No','Co name','Date','Description','Amount (RM)'];
-            const rows = filteredExpenses.map(e => [e.billNo||'', e.coName||'', e.date, e.description||'', e.amount]);
+            const rows = filteredExpenses.map(e => [
+    e.billNo || '',
+    e.coName || '',
+    displayDate(e.date),   // ← changed
+    e.description || '',
+    e.amount
+]);
             exportStyledExcel([headers, ...rows], 'Expenses Report', 'Expenses', 'Expenses', [16,22,14,30,14], [4]);
         }
 
