@@ -563,18 +563,26 @@
             document.getElementById('soOrderNo').value = order.orderNumber || '';
         }
 
-        function clearSalesForm() {
-            document.getElementById('soDate').value = '';
-            document.getElementById('soClientSender').value = '';
-            document.getElementById('soDestFrom').value = '';
-            document.getElementById('soDestTo').value = '';
-            document.getElementById('soVehicle').value = STANDARD_VEHICLES[0]; hideCustomVehicleInput();
-            document.getElementById('soGross').value = '';
-            document.getElementById('soBilling').checked = false;
-            document.getElementById('soPaid').checked = false;
-            document.getElementById('orderNoRow').style.display = 'none';
-            document.getElementById('soOrderNo').value = '';
-        }
+function clearSalesForm() {
+    // Clear flatpickr instance for date field
+    const dateInput = document.getElementById('soDate');
+    if (dateInput._flatpickr) {
+        dateInput._flatpickr.clear();
+    } else {
+        dateInput.value = '';
+    }
+
+    document.getElementById('soClientSender').value = '';
+    document.getElementById('soDestFrom').value = '';
+    document.getElementById('soDestTo').value = '';
+    document.getElementById('soVehicle').value = STANDARD_VEHICLES[0];
+    hideCustomVehicleInput();
+    document.getElementById('soGross').value = '';
+    document.getElementById('soBilling').checked = false;
+    document.getElementById('soPaid').checked = false;
+    document.getElementById('orderNoRow').style.display = 'none';
+    document.getElementById('soOrderNo').value = '';
+}
 
         function setSalesEditingMode(orderId) {
             editingSalesId = orderId;
@@ -717,13 +725,20 @@
             document.getElementById('expAmount').value = exp.amount;
         }
 
-        function clearExpenseForm() {
-            document.getElementById('expBillNo').value = '';
-            document.getElementById('expCoName').value = '';
-            document.getElementById('expDate').value = '';
-            document.getElementById('expDescription').value = '';
-            document.getElementById('expAmount').value = '';
-        }
+function clearExpenseForm() {
+    // Clear flatpickr instance for date field
+    const expDate = document.getElementById('expDate');
+    if (expDate._flatpickr) {
+        expDate._flatpickr.clear();
+    } else {
+        expDate.value = '';
+    }
+
+    document.getElementById('expBillNo').value = '';
+    document.getElementById('expCoName').value = '';
+    document.getElementById('expDescription').value = '';
+    document.getElementById('expAmount').value = '';
+}
 
         function setExpenseEditingMode(expId) {
             editingExpenseId = expId;
@@ -1143,7 +1158,7 @@
 
         // ================== AUTO REFRESH ==================
         async function refreshData() { await loadData(true); alert('Data refreshed!'); }
-        setInterval(async () => { try { if (!editingSalesId && !editingExpenseId) await loadData(false); } catch(e) {} }, 30000);
+        setInterval(async () => { try { if (!editingSalesId && !editingExpenseId) await loadData(false); } catch(e) {} }, 10000);
 
         // ================== INIT ==================
         window.onload = () => {
