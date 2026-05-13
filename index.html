@@ -15,7 +15,6 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        /* ===== Global Styles ===== */
         body { font-family: Arial, sans-serif; max-width: 1100px; margin: auto; padding: 20px; box-sizing: border-box; }
         h1 { margin-bottom: 5px; }
         .tabs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 20px; }
@@ -27,9 +26,7 @@
         .form-row { display: flex; align-items: center; height: 40px; margin-bottom: 10px; max-width: 750px; }
         .form-row label { width: 150px; text-align: right; font-weight: bold; margin-right: 10px; line-height: 40px; }
         .form-row .input-container { flex: 1; display: flex; align-items: center; height: 100%; }
-        .form-row input[type="text"], .form-row input[type="number"], .form-row select {
-            width: 100%; height: 100%; padding: 0 8px; font-size: 14px; box-sizing: border-box;
-        }
+        .form-row input[type="text"], .form-row input[type="number"], .form-row select { width: 100%; height: 100%; padding: 0 8px; font-size: 14px; box-sizing: border-box; }
         .form-row .flatpickr-input { width: 100%; height: 100%; padding: 0 8px; font-size: 14px; box-sizing: border-box; }
         .form-row .checkbox-container { display: flex; align-items: center; gap: 5px; }
 
@@ -69,8 +66,7 @@
         .billing-badge { display: inline-block; background: #28a745; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; }
         .mandatory { color: red; font-weight: bold; margin-left: 2px; }
 
-        /* Inline paid checkbox style */
-        .paid-checkbox { transform: scale(1.3); cursor: pointer; }
+        .paid-checkbox { transform: scale(1.3); cursor: not-allowed; }
 
         #loadingOverlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -194,6 +190,7 @@
                 <tbody></tbody>
             </table>
             <button class="btn-delete-selected" onclick="deleteSelectedSales()">🗑 Delete Selected</button>
+            <div id="salesTotal" style="font-weight:bold; margin-top:10px; text-align:right; padding:8px; background:#f0f0f0; border-radius:4px;">Total: RM 0.00</div>
         </div>
     </div>
 
@@ -313,7 +310,7 @@
             return prefix + String(nextNum).padStart(3,'0');
         }
 
-        // ================== DATA LOADING (with Paid column) ==================
+        // ================== DATA LOADING ==================
         async function loadData(showSpinner = false) {
             if (showSpinner) showLoading();
             try {
@@ -343,7 +340,7 @@
                     vehicle: row['Vehicle'] || '',
                     gross: parseFloat(row['Gross (RM)']) || 0,
                     billing: row['Billing'] === 'Yes',
-                    paid: row['Paid'] === 'Yes'          // <-- new
+                    paid: row['Paid'] === 'Yes'
                 }));
 
                 expenses = expData.map(row => ({
@@ -370,13 +367,13 @@
             }
         }
 
-        // ================== SAVE DATA (with Paid column) ==================
+        // ================== SAVE DATA ==================
         async function saveData() {
             const salesHeaders = ['Sales Order No','Date','Client/Sender','Destination From','Destination To','Vehicle','Gross (RM)','Billing','Paid'];
             const salesArray = salesOrders.map(o => [
                 o.orderNumber, o.date, o.clientSender, o.destFrom, o.destTo, o.vehicle, o.gross,
                 o.billing ? 'Yes' : 'No',
-                o.paid ? 'Yes' : 'No'               // <-- new
+                o.paid ? 'Yes' : 'No'
             ]);
             const expHeaders = ['Bill No','Co name','Date','Description','Amount (RM)'];
             const expArray = expenses.map(e => [e.billNo, e.coName, e.date, e.description, e.amount]);
@@ -454,6 +451,14 @@
         function confirmDelete(message, callback) { if (confirm(message)) callback(); }
 
         // ================== VALIDATION ==================
+        function validateField(value, fieldName) {
+            if (!value || (typeof value === 'string' && value.trim() === '')) {
+                alert(`Kindly input ${fieldName.toLowerCase()}, ${fieldName} is a mandatory field.`);
+                return false;
+            }
+            return true;
+        }
+
         function validateSalesOrder() {
             const date = document.getElementById('soDate').value.trim();
             if (!validateField(displayToIso(date), 'Date')) return false;
@@ -474,15 +479,25 @@
             return true;
         }
 
-        function validateField(value, fieldName) {
-            if (!value || (typeof value === 'string' && value.trim() === '')) {
-                alert(`Kindly input ${fieldName.toLowerCase()}, ${fieldName} is a mandatory field.`);
+        function validateExpense() {
+            const billNo = document.getElementById('expBillNo').value.trim();
+            if (!validateField(billNo, 'Bill No')) return false;
+            const coName = document.getElementById('expCoName').value.trim();
+            if (!validateField(coName, 'Co name')) return false;
+            const date = document.getElementById('expDate').value.trim();
+            if (!validateField(displayToIso(date), 'Date')) return false;
+            const desc = document.getElementById('expDescription').value.trim();
+            if (!validateField(desc, 'Description')) return false;
+            const amount = document.getElementById('expAmount').value.trim();
+            if (!validateField(amount, 'Amount (RM)')) return false;
+            if (isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+                alert('Amount (RM) must be a valid number greater than zero.');
                 return false;
             }
             return true;
         }
 
-        // ================== FILTERS (with Paid filter) ==================
+        // ================== FILTERS ==================
         function applySalesFilter() {
             const dateFrom = document.getElementById('salesFilterDateFrom').value;
             const dateTo = document.getElementById('salesFilterDateTo').value;
@@ -549,7 +564,7 @@
             renderExpenses();
         }
 
-        // ================== SALES CRUD (with Paid) ==================
+        // ================== SALES CRUD ==================
         function populateSalesForm(order) {
             document.getElementById('soDate').value = isoToDisplay(order.date);
             document.getElementById('soClientSender').value = order.clientSender || '';
@@ -563,26 +578,24 @@
             document.getElementById('soOrderNo').value = order.orderNumber || '';
         }
 
-function clearSalesForm() {
-    // Clear flatpickr instance for date field
-    const dateInput = document.getElementById('soDate');
-    if (dateInput._flatpickr) {
-        dateInput._flatpickr.clear();
-    } else {
-        dateInput.value = '';
-    }
+        function clearSalesForm() {
+            const dateInput = document.getElementById('soDate');
+            if (dateInput._flatpickr) {
+                dateInput._flatpickr.clear();
+            } else {
+                dateInput.value = '';
+            }
 
-    document.getElementById('soClientSender').value = '';
-    document.getElementById('soDestFrom').value = '';
-    document.getElementById('soDestTo').value = '';
-    document.getElementById('soVehicle').value = STANDARD_VEHICLES[0];
-    hideCustomVehicleInput();
-    document.getElementById('soGross').value = '';
-    document.getElementById('soBilling').checked = false;
-    document.getElementById('soPaid').checked = false;
-    document.getElementById('orderNoRow').style.display = 'none';
-    document.getElementById('soOrderNo').value = '';
-}
+            document.getElementById('soClientSender').value = '';
+            document.getElementById('soDestFrom').value = '';
+            document.getElementById('soDestTo').value = '';
+            document.getElementById('soVehicle').value = STANDARD_VEHICLES[0]; hideCustomVehicleInput();
+            document.getElementById('soGross').value = '';
+            document.getElementById('soBilling').checked = false;
+            document.getElementById('soPaid').checked = false;
+            document.getElementById('orderNoRow').style.display = 'none';
+            document.getElementById('soOrderNo').value = '';
+        }
 
         function setSalesEditingMode(orderId) {
             editingSalesId = orderId;
@@ -648,64 +661,51 @@ function clearSalesForm() {
 
         function sortSalesOrders() { salesSortDesc = !salesSortDesc; renderSalesOrders(); }
 
-        // ================== TOGGLE PAID STATUS (inline checkbox) ==================
-        async function togglePaidStatus(id, checked) {
-            const order = salesOrders.find(o => o.id === id);
-            if (!order) return;
-            order.paid = checked;
-            try {
-                await saveData();
-            } catch (e) {
-                console.warn('Paid toggle sync failed', e);
-                order.paid = !checked;               // revert on failure
-                renderSalesOrders();                // show correct state
-            }
+        // ================== RENDER SALES TABLE (paid checkbox disabled) ==================
+        function renderSalesOrders() {
+            const tbody = document.querySelector('#soTable tbody');
+            salesSortMode = document.getElementById('soSortMode').value;
+            const sorted = [...filteredSalesOrders].sort((a,b) => {
+                const dA = new Date(a.date), dB = new Date(b.date);
+                let primary = 0, secondary = 0;
+                if (salesSortMode === 'date') primary = dA - dB;
+                else if (salesSortMode === 'month') { primary = dA.getMonth() - dB.getMonth(); if (!primary) secondary = dA.getDate() - dB.getDate(); }
+                else if (salesSortMode === 'year') { primary = dA.getFullYear() - dB.getFullYear(); if (!primary) secondary = dA - dB; }
+                let result = primary !== 0 ? primary : secondary;
+                return salesSortDesc ? -result : result;
+            });
+            document.getElementById('soSortArrow').textContent = salesSortDesc ? '▼' : '▲';
+            tbody.innerHTML = '';
+
+            sorted.forEach(order => {
+                const billingBadge = order.billing ? '<span class="billing-badge">Billing</span>' : '';
+                // Paid checkbox disabled – cannot be toggled directly
+                const paidCheckbox = `<input type="checkbox" class="paid-checkbox" ${order.paid ? 'checked' : ''} disabled>`;
+
+                tbody.innerHTML += `<tr>
+                    <td><input type="checkbox" class="row-check" data-id="${order.id}"></td>
+                    <td>${order.orderNumber || ''}</td>
+                    <td>${displayDate(order.date)}</td>
+                    <td>${order.clientSender || ''}</td>
+                    <td>${order.destFrom || ''}</td>
+                    <td>${order.destTo || ''}</td>
+                    <td>${order.vehicle || ''}</td>
+                    <td>${order.gross.toFixed(2)}</td>
+                    <td>${billingBadge}</td>
+                    <td>${paidCheckbox}</td>
+                    <td>
+                        <button class="btn-edit" onclick="editSalesOrder(${order.id})">Edit</button>
+                        <button class="btn-danger" onclick="deleteSalesOrder(${order.id})">Delete</button>
+                    </td>
+                </tr>`;
+            });
+            document.getElementById('selectAllSales').checked = false;
+
+            // Update total
+            let totalGross = 0;
+            filteredSalesOrders.forEach(order => { totalGross += parseFloat(order.gross) || 0; });
+            document.getElementById('salesTotal').textContent = `Total: RM ${totalGross.toFixed(2)}`;
         }
-
-        // ================== RENDER SALES TABLE (with inline checkboxes) ==================
-function renderSalesOrders() {
-    const tbody = document.querySelector('#soTable tbody');
-    salesSortMode = document.getElementById('soSortMode').value;
-    const sorted = [...filteredSalesOrders].sort((a,b) => {
-        const dA = new Date(a.date), dB = new Date(b.date);
-        let primary = 0, secondary = 0;
-        if (salesSortMode === 'date') primary = dA - dB;
-        else if (salesSortMode === 'month') { primary = dA.getMonth() - dB.getMonth(); if (!primary) secondary = dA.getDate() - dB.getDate(); }
-        else if (salesSortMode === 'year') { primary = dA.getFullYear() - dB.getFullYear(); if (!primary) secondary = dA - dB; }
-        let result = primary !== 0 ? primary : secondary;
-        return salesSortDesc ? -result : result;
-    });
-    document.getElementById('soSortArrow').textContent = salesSortDesc ? '▼' : '▲';
-    tbody.innerHTML = '';
-
-    sorted.forEach(order => {
-        const billingBadge = order.billing ? '<span class="billing-badge">Billing</span>' : '';
-        const paidCheckbox = `<input type="checkbox" class="paid-checkbox" ${order.paid ? 'checked' : ''} onchange="togglePaidStatus(${order.id}, this.checked)">`;
-
-        tbody.innerHTML += `<tr>
-            <td><input type="checkbox" class="row-check" data-id="${order.id}"></td>
-            <td>${order.orderNumber || ''}</td>
-            <td>${displayDate(order.date)}</td>
-            <td>${order.clientSender || ''}</td>
-            <td>${order.destFrom || ''}</td>
-            <td>${order.destTo || ''}</td>
-            <td>${order.vehicle || ''}</td>
-            <td>${order.gross.toFixed(2)}</td>
-            <td>${billingBadge}</td>
-            <td>${paidCheckbox}</td>
-            <td>
-                <button class="btn-edit" onclick="editSalesOrder(${order.id})">Edit</button>
-                <button class="btn-danger" onclick="deleteSalesOrder(${order.id})">Delete</button>
-            </td>
-        </tr>`;
-    });
-    document.getElementById('selectAllSales').checked = false;
-
-    // ---- NEW: Total sum ----
-    let totalGross = 0;
-    filteredSalesOrders.forEach(order => { totalGross += parseFloat(order.gross) || 0; });
-    document.getElementById('salesTotal').textContent = `Total: RM ${totalGross.toFixed(2)}`;
-}
 
         function toggleAllSalesCheckboxes(source) {
             document.querySelectorAll('#soTable tbody input.row-check').forEach(cb => cb.checked = source.checked);
@@ -730,20 +730,18 @@ function renderSalesOrders() {
             document.getElementById('expAmount').value = exp.amount;
         }
 
-function clearExpenseForm() {
-    // Clear flatpickr instance for date field
-    const expDate = document.getElementById('expDate');
-    if (expDate._flatpickr) {
-        expDate._flatpickr.clear();
-    } else {
-        expDate.value = '';
-    }
-
-    document.getElementById('expBillNo').value = '';
-    document.getElementById('expCoName').value = '';
-    document.getElementById('expDescription').value = '';
-    document.getElementById('expAmount').value = '';
-}
+        function clearExpenseForm() {
+            const expDate = document.getElementById('expDate');
+            if (expDate._flatpickr) {
+                expDate._flatpickr.clear();
+            } else {
+                expDate.value = '';
+            }
+            document.getElementById('expBillNo').value = '';
+            document.getElementById('expCoName').value = '';
+            document.getElementById('expDescription').value = '';
+            document.getElementById('expAmount').value = '';
+        }
 
         function setExpenseEditingMode(expId) {
             editingExpenseId = expId;
@@ -853,13 +851,9 @@ function clearExpenseForm() {
                 for (let i = 0; i < rows.length; i++) {
                     const firstCell = rows[i][0]?.toString().trim();
                     if (firstCell === 'Order No') {
-                        headerIndex = i;
-                        hasOrderNo = true;
-                        break;
+                        headerIndex = i; hasOrderNo = true; break;
                     } else if (firstCell === 'Date') {
-                        headerIndex = i;
-                        hasOrderNo = false;
-                        break;
+                        headerIndex = i; hasOrderNo = false; break;
                     }
                 }
                 if (headerIndex === -1) return alert('Could not find a valid header row.');
@@ -931,8 +925,7 @@ function clearExpenseForm() {
                 let headerIndex = -1;
                 for (let i = 0; i < rows.length; i++) {
                     if (rows[i][0]?.toString().trim() === 'Bill No') {
-                        headerIndex = i;
-                        break;
+                        headerIndex = i; break;
                     }
                 }
                 if (headerIndex === -1) return alert('Could not find expense header row.');
@@ -1161,7 +1154,7 @@ function clearExpenseForm() {
             exportStyledExcel(data, 'Profit & Tax Report', 'Report_Tax', 'Report & Tax', [25,40], []);
         }
 
-        // ================== AUTO REFRESH ==================
+        // ================== AUTO REFRESH (10 SEC) ==================
         async function refreshData() { await loadData(true); alert('Data refreshed!'); }
         setInterval(async () => { try { if (!editingSalesId && !editingExpenseId) await loadData(false); } catch(e) {} }, 10000);
 
