@@ -66,7 +66,7 @@
         .billing-badge { display: inline-block; background: #28a745; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; }
         .mandatory { color: red; font-weight: bold; margin-left: 2px; }
 
-        .paid-checkbox { transform: scale(1.3); cursor: not-allowed; }
+        .paid-checkbox { transform: scale(1.3); cursor: pointer; }
 
         #loadingOverlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -662,51 +662,63 @@
         function sortSalesOrders() { salesSortDesc = !salesSortDesc; renderSalesOrders(); }
 
         // ================== RENDER SALES TABLE (paid checkbox disabled) ==================
+      async function togglePaidStatus(id, checked) {
+    const order = salesOrders.find(o => o.id === id);
+    if (!order) return;
+    order.paid = checked;
+    try {
+        await saveData();
+    } catch (e) {
+        console.warn('Paid toggle sync failed', e);
+        order.paid = !checked;   // revert on failure
+        renderSalesOrders();     // refresh to show correct state
+    }
+}
+            
         function renderSalesOrders() {
-            const tbody = document.querySelector('#soTable tbody');
-            salesSortMode = document.getElementById('soSortMode').value;
-            const sorted = [...filteredSalesOrders].sort((a,b) => {
-                const dA = new Date(a.date), dB = new Date(b.date);
-                let primary = 0, secondary = 0;
-                if (salesSortMode === 'date') primary = dA - dB;
-                else if (salesSortMode === 'month') { primary = dA.getMonth() - dB.getMonth(); if (!primary) secondary = dA.getDate() - dB.getDate(); }
-                else if (salesSortMode === 'year') { primary = dA.getFullYear() - dB.getFullYear(); if (!primary) secondary = dA - dB; }
-                let result = primary !== 0 ? primary : secondary;
-                return salesSortDesc ? -result : result;
-            });
-            document.getElementById('soSortArrow').textContent = salesSortDesc ? '▼' : '▲';
-            tbody.innerHTML = '';
+    const tbody = document.querySelector('#soTable tbody');
+    salesSortMode = document.getElementById('soSortMode').value;
+    const sorted = [...filteredSalesOrders].sort((a,b) => {
+        const dA = new Date(a.date), dB = new Date(b.date);
+        let primary = 0, secondary = 0;
+        if (salesSortMode === 'date') primary = dA - dB;
+        else if (salesSortMode === 'month') { primary = dA.getMonth() - dB.getMonth(); if (!primary) secondary = dA.getDate() - dB.getDate(); }
+        else if (salesSortMode === 'year') { primary = dA.getFullYear() - dB.getFullYear(); if (!primary) secondary = dA - dB; }
+        let result = primary !== 0 ? primary : secondary;
+        return salesSortDesc ? -result : result;
+    });
+    document.getElementById('soSortArrow').textContent = salesSortDesc ? '▼' : '▲';
+    tbody.innerHTML = '';
 
-            sorted.forEach(order => {
-                const billingBadge = order.billing ? '<span class="billing-badge">Billing</span>' : '';
-                // Paid checkbox disabled – cannot be toggled directly
-                const paidCheckbox = `<input type="checkbox" class="paid-checkbox" ${order.paid ? 'checked' : ''} disabled>`;
+    sorted.forEach(order => {
+        const billingBadge = order.billing ? '<span class="billing-badge">Billing</span>' : '';
+        // Paid checkbox – enabled, toggles paid status on click
+        const paidCheckbox = `<input type="checkbox" class="paid-checkbox" ${order.paid ? 'checked' : ''} onchange="togglePaidStatus(${order.id}, this.checked)">`;
 
-                tbody.innerHTML += `<tr>
-                    <td><input type="checkbox" class="row-check" data-id="${order.id}"></td>
-                    <td>${order.orderNumber || ''}</td>
-                    <td>${displayDate(order.date)}</td>
-                    <td>${order.clientSender || ''}</td>
-                    <td>${order.destFrom || ''}</td>
-                    <td>${order.destTo || ''}</td>
-                    <td>${order.vehicle || ''}</td>
-                    <td>${order.gross.toFixed(2)}</td>
-                    <td>${billingBadge}</td>
-                    <td>${paidCheckbox}</td>
-                    <td>
-                        <button class="btn-edit" onclick="editSalesOrder(${order.id})">Edit</button>
-                        <button class="btn-danger" onclick="deleteSalesOrder(${order.id})">Delete</button>
-                    </td>
-                </tr>`;
-            });
-            document.getElementById('selectAllSales').checked = false;
+        tbody.innerHTML += `<tr>
+            <td><input type="checkbox" class="row-check" data-id="${order.id}"></td>
+            <td>${order.orderNumber || ''}</td>
+            <td>${displayDate(order.date)}</td>
+            <td>${order.clientSender || ''}</td>
+            <td>${order.destFrom || ''}</td>
+            <td>${order.destTo || ''}</td>
+            <td>${order.vehicle || ''}</td>
+            <td>${order.gross.toFixed(2)}</td>
+            <td>${billingBadge}</td>
+            <td>${paidCheckbox}</td>
+            <td>
+                <button class="btn-edit" onclick="editSalesOrder(${order.id})">Edit</button>
+                <button class="btn-danger" onclick="deleteSalesOrder(${order.id})">Delete</button>
+            </td>
+        </tr>`;
+    });
+    document.getElementById('selectAllSales').checked = false;
 
-            // Update total
-            let totalGross = 0;
-            filteredSalesOrders.forEach(order => { totalGross += parseFloat(order.gross) || 0; });
-            document.getElementById('salesTotal').textContent = `Total: RM ${totalGross.toFixed(2)}`;
-        }
-
+    // Update total
+    let totalGross = 0;
+    filteredSalesOrders.forEach(order => { totalGross += parseFloat(order.gross) || 0; });
+    document.getElementById('salesTotal').textContent = `Total: RM ${totalGross.toFixed(2)}`;
+}
         function toggleAllSalesCheckboxes(source) {
             document.querySelectorAll('#soTable tbody input.row-check').forEach(cb => cb.checked = source.checked);
         }
