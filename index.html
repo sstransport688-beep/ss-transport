@@ -1131,19 +1131,6 @@
             const order = salesOrders.find(o => o.id === id);
             if (!order) return;
             
-            // Ask if this should be imported as sales order data
-            if (!confirm('Should this be imported as sales order data?\n\nClick OK to create a new sales order with the invoice details.\nClick Cancel to just generate the invoice without creating a sales order.')) {
-                // User clicked Cancel - just proceed with invoice generation without creating SO
-                proceedWithInvoiceOnly(order);
-                return;
-            }
-            
-            // User clicked OK - create new sales order from invoice data
-            createSalesOrderFromInvoice(order);
-        }
-        
-        // Proceed with invoice only (no new sales order creation)
-        function proceedWithInvoiceOnly(order) {
             // Switch to Invoice tab
             document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
             document.getElementById('invoicePanel').style.display = 'block';
@@ -1170,50 +1157,6 @@
             renderSalesOrders();
             
             alert('Sales Order data loaded into Invoice Generator!');
-        }
-        
-        // Create new sales order from invoice data
-        function createSalesOrderFromInvoice(order) {
-            // Switch to Invoice tab
-            document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
-            document.getElementById('invoicePanel').style.display = 'block';
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelector('[data-tab="invoice"]').classList.add('active');
-            
-            // Fill in invoice details from sales order
-            document.querySelector('[data-target="inv-so"]').value = order.orderNumber || '';
-            document.querySelector('[data-target="prev-company"]').value = order.clientSender || '';
-            document.querySelector('[data-target="inv-date"]').value = order.date || '';
-            
-            // Trigger input events to update preview
-            document.querySelector('[data-target="inv-so"]').dispatchEvent(new Event('input'));
-            document.querySelector('[data-target="prev-company"]').dispatchEvent(new Event('input'));
-            document.querySelector('[data-target="inv-date"]').dispatchEvent(new Event('input'));
-            
-            // Add automatic item row
-            document.getElementById('itemsBody').innerHTML = '';
-            addInvoiceItem(`Transport: ${order.destFrom} to ${order.destTo} (${order.vehicle})`, order.gross, 1);
-            
-            // Create new sales order with relevant data from the invoice
-            const newOrder = {
-                id: Date.now(),
-                orderNumber: 'INV-' + order.orderNumber,
-                date: order.date,
-                clientSender: order.clientSender,
-                destFrom: order.destFrom,
-                destTo: order.destTo,
-                vehicle: order.vehicle,
-                gross: order.gross,
-                billing: order.billing || false,
-                paid: false,
-                invoiced: false
-            };
-            
-            salesOrders.push(newOrder);
-            saveData();
-            renderSalesOrders();
-            
-            alert('New sales order created: ' + newOrder.orderNumber + '\n\nInvoice data loaded into Invoice Generator!');
         }
 
         // New function: Alert icon click - populate customer details and show status reminder
@@ -1963,6 +1906,40 @@
                     await new Promise(resolve => setTimeout(resolve, 500));
                     
                     const soNo = document.getElementById('inv-so').textContent || 'Untitled';
+                    
+                    // Ask if this should be imported as sales order data
+                    let shouldCreateSalesOrder = false;
+                    const order = salesOrders.find(o => o.orderNumber === soNo);
+                    
+                    if (order && !order.invoiced) {
+                        if (confirm('Should this be imported as sales order data?\n\nClick OK to create a new sales order with the invoice details.\nClick Cancel to just export the PDF without creating a sales order.')) {
+                            shouldCreateSalesOrder = true;
+                        }
+                    }
+                    
+                    // Create new sales order if user confirmed
+                    if (shouldCreateSalesOrder && order) {
+                        const newOrder = {
+                            id: Date.now(),
+                            orderNumber: 'INV-' + order.orderNumber,
+                            date: order.date,
+                            clientSender: order.clientSender,
+                            destFrom: order.destFrom,
+                            destTo: order.destTo,
+                            vehicle: order.vehicle,
+                            gross: order.gross,
+                            billing: order.billing || false,
+                            paid: false,
+                            invoiced: false
+                        };
+                        
+                        salesOrders.push(newOrder);
+                        saveData();
+                        renderSalesOrders();
+                        
+                        alert('New sales order created: ' + newOrder.orderNumber);
+                    }
+                    
                     const opt = {
                         margin: [0.3, 0.3, 0.3, 0.3],
                         filename: `SINASTARINVOICE_${soNo}.pdf`,
