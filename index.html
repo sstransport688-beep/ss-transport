@@ -649,7 +649,13 @@
                     <div class="full-width"><label>Sales Order No.</label><input type="text" class="sync-input" data-target="inv-so"></div>
                 </div>
 
-                <div class="inv-section-title">📦 Items</div>
+                <div class="inv-section-title">📦 Items & Transport Details</div>
+                <div class="inv-form-grid">
+                    <div><label>Location From</label><input type="text" class="sync-input" data-target="prev-loc-from" id="invLocFrom" placeholder="Pick-up location"></div>
+                    <div><label>Location To</label><input type="text" class="sync-input" data-target="prev-loc-to" id="invLocTo" placeholder="Drop-off location"></div>
+                    <div><label>Vehicle/Lorry Type</label><input type="text" class="sync-input" data-target="prev-vehicle-type" id="invVehicleType" placeholder="e.g., 14ft Lorry"></div>
+                    <div><label>Driver Name</label><input type="text" class="sync-input" data-target="inv-driver" id="invDriver" placeholder="Driver name"></div>
+                </div>
                 <div class="table-wrapper">
                     <table id="editorTable">
                         <thead>
@@ -715,6 +721,10 @@
                         <strong>Phone:</strong> <span id="prev-phone">-</span>
                         <strong>Email:</strong> <span id="prev-email">-</span>
                         <strong>Address:</strong> <span id="prev-address">-</span>
+                    </div>
+
+                    <div class="bill-to" style="background: #e8f4fd; border-left-color: #1a3a5c; margin-top: 10px;">
+                        🚚 Transport: <span id="prev-loc-from">-</span> to <span id="prev-loc-to">-</span> (<span id="prev-vehicle-type">-</span>)
                     </div>
 
                     <div class="table-wrapper">
@@ -1142,10 +1152,18 @@
             document.querySelector('[data-target="prev-company"]').value = order.clientSender || '';
             document.querySelector('[data-target="inv-date"]').value = order.date || '';
             
+            // Fill in new transport detail fields
+            document.getElementById('invLocFrom').value = order.destFrom || '';
+            document.getElementById('invLocTo').value = order.destTo || '';
+            document.getElementById('invVehicleType').value = order.vehicle || '';
+            
             // Trigger input events to update preview
             document.querySelector('[data-target="inv-so"]').dispatchEvent(new Event('input'));
             document.querySelector('[data-target="prev-company"]').dispatchEvent(new Event('input'));
             document.querySelector('[data-target="inv-date"]').dispatchEvent(new Event('input'));
+            document.getElementById('invLocFrom').dispatchEvent(new Event('input'));
+            document.getElementById('invLocTo').dispatchEvent(new Event('input'));
+            document.getElementById('invVehicleType').dispatchEvent(new Event('input'));
             
             // Add automatic item row
             document.getElementById('itemsBody').innerHTML = '';
@@ -1164,8 +1182,15 @@
             const order = salesOrders.find(o => o.id === id);
             if (!order) return;
             
-            // Show status reminder
-            alert('⚠️ Status: Not Invoiced\n\nThis sales order has not yet been invoiced.\n\nPlease generate an invoice for this order to update its status to "Invoiced" (✅).');
+            // Show status reminder with more detailed info
+            const statusMsg = order.invoiced 
+                ? '✅ Status: Invoiced\n\nThis sales order has been invoiced successfully.\n\nThe invoice has been generated and the order is marked as complete.'
+                : '⚠️ Status: Not Invoiced\n\nThis sales order has not yet been invoiced.\n\nPlease generate an invoice for this order to update its status to "Invoiced" (✅).';
+            
+            alert(statusMsg + '\n\nCustomer: ' + (order.clientSender || 'N/A') + 
+                  '\nOrder No: ' + (order.orderNumber || 'N/A') + 
+                  '\nRoute: ' + (order.destFrom || 'N/A') + ' to ' + (order.destTo || 'N/A') +
+                  '\nVehicle: ' + (order.vehicle || 'N/A'));
             
             // Switch to Invoice tab
             switchTab('invoice');
@@ -1175,7 +1200,10 @@
             document.querySelector('[data-target="inv-so"]').value = order.orderNumber || '';
             document.querySelector('[data-target="inv-date"]').value = order.date || '';
             
-            // Also populate additional fields based on order data
+            // Also populate new transport detail fields
+            document.getElementById('invLocFrom').value = order.destFrom || '';
+            document.getElementById('invLocTo').value = order.destTo || '';
+            document.getElementById('invVehicleType').value = order.vehicle || '';
             document.querySelector('[data-target="prev-address"]').value = order.destFrom || '';
             
             // Populate items section with order data
@@ -1186,6 +1214,9 @@
             document.querySelector('[data-target="prev-company"]').dispatchEvent(new Event('input'));
             document.querySelector('[data-target="inv-so"]').dispatchEvent(new Event('input'));
             document.querySelector('[data-target="inv-date"]').dispatchEvent(new Event('input'));
+            document.getElementById('invLocFrom').dispatchEvent(new Event('input'));
+            document.getElementById('invLocTo').dispatchEvent(new Event('input'));
+            document.getElementById('invVehicleType').dispatchEvent(new Event('input'));
             document.querySelector('[data-target="prev-address"]').dispatchEvent(new Event('input'));
         }
 
@@ -1922,8 +1953,8 @@
                     // Create new sales order if user confirmed
                     if (shouldCreateSalesOrder) {
                         const dateValue = document.querySelector('[data-target="inv-date"]').value || new Date().toISOString().split('T')[0];
-                        const destFrom = document.querySelector('[data-target="prev-address"]').value || '';
-                        const destTo = document.getElementById('invDischargePort').value || '';
+                        const destFrom = document.getElementById('invLocFrom').value || document.querySelector('[data-target="prev-address"]').value || '';
+                        const destTo = document.getElementById('invLocTo').value || '';
                         const vehicle = document.getElementById('invVehicleType').value || '';
                         
                         // Calculate gross from items
