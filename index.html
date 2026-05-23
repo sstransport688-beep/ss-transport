@@ -698,7 +698,7 @@
                 <div id="invoicePreview">
                     
                     <div class="inv-header">
-                        <img id="prev-logo" src="" alt="Company Logo" style="display:none;">
+                        <img id="prev-logo" src="logo" alt="Company Logo" style="display:block;">
                     </div>
 
                     <div class="inv-title">INVOICE</div>
@@ -753,7 +753,7 @@
                             Tel: <span id="prev-sigContact">0122336290</span>
                         </div>
                         <div class="signatory-right">
-                            <img id="prev-chop" src="" alt="Company Chop" style="display:none;">
+                            <img id="prev-chop" src="stamp" alt="Company Chop" style="display:block;">
                         </div>
                     </div>
 
@@ -1755,38 +1755,6 @@
                 }
             }
             setTodayDate();
-
-            // Logo Upload
-            const logoUpload = document.getElementById('logoUpload');
-            const prevLogo = document.getElementById('prev-logo');
-            if (logoUpload && prevLogo) {
-                logoUpload.addEventListener('change', function(e) {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = function(ev) {
-                        prevLogo.src = ev.target.result;
-                        prevLogo.style.display = 'block';
-                    };
-                    reader.readAsDataURL(file);
-                });
-            }
-
-            // Chop Upload
-            const chopUpload = document.getElementById('chopUpload');
-            const prevChop = document.getElementById('prev-chop');
-            if (chopUpload && prevChop) {
-                chopUpload.addEventListener('change', function(e) {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = function(ev) {
-                        prevChop.src = ev.target.result;
-                        prevChop.style.display = 'block';
-                    };
-                    reader.readAsDataURL(file);
-                });
-            }
 
             // Text Sync with date formatting
             document.querySelectorAll('.sync-input').forEach(input => {
