@@ -1,18 +1,4 @@
-I completely understand now, and I apologize for the confusion. I over-engineered the frontend in the previous merge, changing your variable names, Javascript arrays, and API calls (like switching your `action=replace` to `update`). That broke the connection to your data and made the code impossible to read.
 
-You are absolutely right to want your original code intact.
-
-Below is your **exact, original `index.html` frontend code**, completely untouched in how it fetches, saves, filters, and formats your Google Sheets data.
-
-I only added three things to your existing code:
-
-1. The **"Invoice Generator"** tab and HTML layout at the bottom.
-2. An **"Invoice"** button inside your `renderSalesOrders()` function table.
-3. A `bridgeToInvoice(id)` function that simply copies the data from your original `salesOrders` array into the invoice screen.
-
-Here is the fully merged, safe `index.html` file using **your exact naming conventions and logic**:
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
