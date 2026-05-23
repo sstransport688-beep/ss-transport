@@ -1906,31 +1906,47 @@
                     await new Promise(resolve => setTimeout(resolve, 500));
                     
                     const soNo = document.getElementById('inv-so').textContent || 'Untitled';
+                    const clientName = document.querySelector('[data-target="prev-company"]').value || '';
                     
-                    // Ask if this should be imported as sales order data
+                    // Ask if this should be imported as sales order data (only if not from existing SO)
                     let shouldCreateSalesOrder = false;
-                    const order = salesOrders.find(o => o.orderNumber === soNo);
+                    const existingOrder = salesOrders.find(o => o.orderNumber === soNo);
                     
-                    if (order && !order.invoiced) {
+                    // Only ask if this is NOT from an existing sales order
+                    if (!existingOrder && clientName) {
                         if (confirm('Should this be imported as sales order data?\n\nClick OK to create a new sales order with the invoice details.\nClick Cancel to just export the PDF without creating a sales order.')) {
                             shouldCreateSalesOrder = true;
                         }
                     }
                     
                     // Create new sales order if user confirmed
-                    if (shouldCreateSalesOrder && order) {
+                    if (shouldCreateSalesOrder) {
+                        const dateValue = document.querySelector('[data-target="inv-date"]').value || new Date().toISOString().split('T')[0];
+                        const destFrom = document.querySelector('[data-target="prev-address"]').value || '';
+                        const destTo = document.getElementById('invDischargePort').value || '';
+                        const vehicle = document.getElementById('invVehicleType').value || '';
+                        
+                        // Calculate gross from items
+                        let gross = 0;
+                        const rows = itemsBody.querySelectorAll('tr');
+                        rows.forEach(row => {
+                            const price = parseFloat(row.querySelector('.item-price').value) || 0;
+                            const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+                            gross += price * qty;
+                        });
+                        
                         const newOrder = {
                             id: Date.now(),
-                            orderNumber: 'INV-' + order.orderNumber,
-                            date: order.date,
-                            clientSender: order.clientSender,
-                            destFrom: order.destFrom,
-                            destTo: order.destTo,
-                            vehicle: order.vehicle,
-                            gross: order.gross,
-                            billing: order.billing || false,
+                            orderNumber: 'SO-' + Date.now().toString().slice(-6),
+                            date: dateValue,
+                            clientSender: clientName,
+                            destFrom: destFrom,
+                            destTo: destTo,
+                            vehicle: vehicle,
+                            gross: gross,
+                            billing: false,
                             paid: false,
-                            invoiced: false
+                            invoiced: true
                         };
                         
                         salesOrders.push(newOrder);
