@@ -1131,6 +1131,19 @@
             const order = salesOrders.find(o => o.id === id);
             if (!order) return;
             
+            // Ask if this should be imported as sales order data
+            if (!confirm('Should this be imported as sales order data?\n\nClick OK to create a new sales order with the invoice details.\nClick Cancel to just generate the invoice without creating a sales order.')) {
+                // User clicked Cancel - just proceed with invoice generation without creating SO
+                proceedWithInvoiceOnly(order);
+                return;
+            }
+            
+            // User clicked OK - create new sales order from invoice data
+            createSalesOrderFromInvoice(order);
+        }
+        
+        // Proceed with invoice only (no new sales order creation)
+        function proceedWithInvoiceOnly(order) {
             // Switch to Invoice tab
             document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
             document.getElementById('invoicePanel').style.display = 'block';
@@ -1147,12 +1160,90 @@
             document.querySelector('[data-target="prev-company"]').dispatchEvent(new Event('input'));
             document.querySelector('[data-target="inv-date"]').dispatchEvent(new Event('input'));
             
+            // Add automatic item row
+            document.getElementById('itemsBody').innerHTML = '';
+            addInvoiceItem(`Transport: ${order.destFrom} to ${order.destTo} (${order.vehicle})`, order.gross, 1);
+            
             // Mark as invoiced
             order.invoiced = true;
             saveData();
             renderSalesOrders();
             
             alert('Sales Order data loaded into Invoice Generator!');
+        }
+        
+        // Create new sales order from invoice data
+        function createSalesOrderFromInvoice(order) {
+            // Switch to Invoice tab
+            document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+            document.getElementById('invoicePanel').style.display = 'block';
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector('[data-tab="invoice"]').classList.add('active');
+            
+            // Fill in invoice details from sales order
+            document.querySelector('[data-target="inv-so"]').value = order.orderNumber || '';
+            document.querySelector('[data-target="prev-company"]').value = order.clientSender || '';
+            document.querySelector('[data-target="inv-date"]').value = order.date || '';
+            
+            // Trigger input events to update preview
+            document.querySelector('[data-target="inv-so"]').dispatchEvent(new Event('input'));
+            document.querySelector('[data-target="prev-company"]').dispatchEvent(new Event('input'));
+            document.querySelector('[data-target="inv-date"]').dispatchEvent(new Event('input'));
+            
+            // Add automatic item row
+            document.getElementById('itemsBody').innerHTML = '';
+            addInvoiceItem(`Transport: ${order.destFrom} to ${order.destTo} (${order.vehicle})`, order.gross, 1);
+            
+            // Create new sales order with relevant data from the invoice
+            const newOrder = {
+                id: Date.now(),
+                orderNumber: 'INV-' + order.orderNumber,
+                date: order.date,
+                clientSender: order.clientSender,
+                destFrom: order.destFrom,
+                destTo: order.destTo,
+                vehicle: order.vehicle,
+                gross: order.gross,
+                billing: order.billing || false,
+                paid: false,
+                invoiced: false
+            };
+            
+            salesOrders.push(newOrder);
+            saveData();
+            renderSalesOrders();
+            
+            alert('New sales order created: ' + newOrder.orderNumber + '\n\nInvoice data loaded into Invoice Generator!');
+        }
+
+        // New function: Alert icon click - populate customer details and show status reminder
+        function alertIconClick(id) {
+            const order = salesOrders.find(o => o.id === id);
+            if (!order) return;
+            
+            // Show status reminder
+            alert('⚠️ Status: Not Invoiced\n\nThis sales order has not yet been invoiced.\n\nPlease generate an invoice for this order to update its status to "Invoiced" (✅).');
+            
+            // Switch to Invoice tab
+            switchTab('invoice');
+            
+            // Auto-populate customer details from the sales order using data-target attributes
+            document.querySelector('[data-target="prev-company"]').value = order.clientSender || '';
+            document.querySelector('[data-target="inv-so"]').value = order.orderNumber || '';
+            document.querySelector('[data-target="inv-date"]').value = order.date || '';
+            
+            // Also populate additional fields based on order data
+            document.querySelector('[data-target="prev-address"]').value = order.destFrom || '';
+            
+            // Populate items section with order data
+            document.getElementById('itemsBody').innerHTML = '';
+            addInvoiceItem(`Transport: ${order.destFrom} to ${order.destTo} (${order.vehicle})`, order.gross, 1);
+            
+            // Trigger updates to render on the live preview
+            document.querySelector('[data-target="prev-company"]').dispatchEvent(new Event('input'));
+            document.querySelector('[data-target="inv-so"]').dispatchEvent(new Event('input'));
+            document.querySelector('[data-target="inv-date"]').dispatchEvent(new Event('input'));
+            document.querySelector('[data-target="prev-address"]').dispatchEvent(new Event('input'));
         }
 
         async function addOrUpdateSalesOrder() {
@@ -1211,29 +1302,6 @@
             }
         }
 
-        // ================== NEW: BRIDGE TO INVOICE ==================
-        function bridgeToInvoice(id) {
-            const order = salesOrders.find(o => o.id === id);
-            if (!order) return;
-            
-            // Switch tab
-            switchTab('invoice');
-            
-            // Fill fields
-            document.getElementById('inv-client-input').value = order.clientSender || '';
-            document.getElementById('inv-so-input').value = order.orderNumber || '';
-            document.getElementById('inv-date-input').value = order.date || '';
-            
-            // Trigger updates to render on the live preview
-            document.getElementById('inv-client-input').dispatchEvent(new Event('input'));
-            document.getElementById('inv-so-input').dispatchEvent(new Event('input'));
-            document.getElementById('inv-date-input').dispatchEvent(new Event('input'));
-            
-            // Add automatic item row
-            document.getElementById('itemsBody').innerHTML = '';
-            addInvoiceItem(`Transport: ${order.destFrom} to ${order.destTo} (${order.vehicle})`, order.gross, 1);
-        }
-
         // ================== RENDER SALES TABLE ==================
         function renderSalesOrders() {
             const tbody = document.querySelector('#soTable tbody');
@@ -1255,7 +1323,7 @@
                 const isEditingThis = editingSalesId === order.id;
                 const paidCheckbox = `<input type="checkbox" class="paid-checkbox" ${order.paid ? 'checked' : ''} ${isEditingThis ? `onchange="togglePaidStatus(${order.id}, this.checked)"` : 'disabled'}>`;
                 const isInvoiced = order.invoiced || false;
-                const statusIcon = isInvoiced ? '<span title="Invoiced">✅</span>' : '<span title="Not Invoiced" style="color:#d35400;">⚠️</span>';
+                const statusIcon = isInvoiced ? '<span title="Invoiced" style="cursor:pointer;" onclick="alertIconClick(' + order.id + ')">✅</span>' : '<span title="Not Invoiced" style="color:#d35400; cursor:pointer;" onclick="alertIconClick(' + order.id + ')">⚠️</span>';
 
                 // ---> I added the Invoice button right here below <---
                 tbody.innerHTML += `<tr>
@@ -1798,6 +1866,31 @@
             // Items Table Logic
             const itemsBody = document.getElementById('itemsBody');
             const prevItems = document.getElementById('prev-items');
+
+            // Global function to add invoice item row with pre-filled data
+            window.addInvoiceItem = (description, price, qty) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="border:1px solid var(--inv-border); padding:4px;">
+                        <input type="date" class="item-date date-input" style="border:none; width:100%; font-size:0.75rem;">
+                    </td>
+                    <td style="border:1px solid var(--inv-border); padding:4px;"><input type="text" class="item-desc" style="border:none; width:100%; font-size:0.75rem;" value="${description}"></td>
+                    <td style="border:1px solid var(--inv-border); padding:4px;"><input type="text" class="item-uom" style="border:none; width:100%; font-size:0.75rem;" value="LOT"></td>
+                    <td style="border:1px solid var(--inv-border); padding:4px;"><input type="number" class="item-price" style="border:none; width:100%; font-size:0.75rem;" value="${price}"></td>
+                    <td style="border:1px solid var(--inv-border); padding:4px;"><input type="number" class="item-qty" style="border:none; width:100%; font-size:0.75rem;" value="${qty}"></td>
+                    <td style="border:1px solid var(--inv-border); padding:4px; text-align:center;"><button class="btn-inv-remove remove-row">✕</button></td>
+                `;
+                itemsBody.appendChild(tr);
+
+                tr.querySelectorAll('input').forEach(inp => {
+                    inp.addEventListener('input', updatePreviewTable);
+                });
+                tr.querySelector('.remove-row').addEventListener('click', () => {
+                    tr.remove();
+                    updatePreviewTable();
+                });
+                updatePreviewTable();
+            };
 
             const addRow = () => {
                 const tr = document.createElement('tr');
