@@ -154,25 +154,31 @@
     .inv-form-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px 12px;
+      gap: 15px 20px;
     }
     .inv-form-grid .full-width { grid-column: 1 / -1; }
+    
+    .inv-form-grid > div {
+      min-height: 50px;
+      box-sizing: border-box;
+    }
 
     .inv-form-grid label {
       display: block;
       font-size: 0.75rem;
       font-weight: 600;
       color: var(--inv-text-light);
-      margin-bottom: 3px;
+      margin-bottom: 6px;
     }
     .inv-form-grid input {
       width: 100%;
-      padding: 8px 10px;
+      padding: 10px 12px;
       border: 1px solid var(--inv-border);
       border-radius: 6px;
       font-size: 0.85rem;
       background: #f8fafc;
       transition: 0.2s;
+      box-sizing: border-box;
     }
     .inv-form-grid input[type="date"] {
       font-family: inherit;
