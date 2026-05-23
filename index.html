@@ -552,6 +552,7 @@
                     <th class="sortable" onclick="sortSalesOrders()"><div class="sort-controls"><span>Date <span class="sort-arrow" id="soSortArrow">▼</span></span><select class="sort-mode-select" id="soSortMode" onclick="event.stopPropagation()" onchange="sortSalesOrders()"><option value="date">Date</option><option value="month">Month</option><option value="year">Year</option></select></div></th>
                     <th>Client/Sender</th><th>Destination From</th><th>Destination To</th><th>Vehicle</th><th>Gross</th><th>Billing</th>
                     <th>Paid</th>
+                    <th>Status</th>
                     <th>Action</th>
                 </tr></thead>
                 <tbody></tbody>
@@ -1125,6 +1126,35 @@
             setSalesEditingMode(id);
         }
 
+        // Bridge function to transfer Sales Order data to Invoice Generator
+        function bridgeToInvoice(id) {
+            const order = salesOrders.find(o => o.id === id);
+            if (!order) return;
+            
+            // Switch to Invoice tab
+            document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+            document.getElementById('invoicePanel').style.display = 'block';
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector('[data-tab="invoice"]').classList.add('active');
+            
+            // Fill in invoice details from sales order
+            document.querySelector('[data-target="inv-so"]').value = order.orderNumber || '';
+            document.querySelector('[data-target="prev-company"]').value = order.clientSender || '';
+            document.querySelector('[data-target="inv-date"]').value = order.date || '';
+            
+            // Trigger input events to update preview
+            document.querySelector('[data-target="inv-so"]').dispatchEvent(new Event('input'));
+            document.querySelector('[data-target="prev-company"]').dispatchEvent(new Event('input'));
+            document.querySelector('[data-target="inv-date"]').dispatchEvent(new Event('input'));
+            
+            // Mark as invoiced
+            order.invoiced = true;
+            saveData();
+            renderSalesOrders();
+            
+            alert('Sales Order data loaded into Invoice Generator!');
+        }
+
         async function addOrUpdateSalesOrder() {
             if (!validateSalesOrder()) return;
             const dateDisplay = document.getElementById('soDate').value;
@@ -1224,6 +1254,8 @@
                 const billingBadge = order.billing ? '<span class="billing-badge">Billing</span>' : '';
                 const isEditingThis = editingSalesId === order.id;
                 const paidCheckbox = `<input type="checkbox" class="paid-checkbox" ${order.paid ? 'checked' : ''} ${isEditingThis ? `onchange="togglePaidStatus(${order.id}, this.checked)"` : 'disabled'}>`;
+                const isInvoiced = order.invoiced || false;
+                const statusIcon = isInvoiced ? '<span title="Invoiced">✅</span>' : '<span title="Not Invoiced" style="color:#d35400;">⚠️</span>';
 
                 // ---> I added the Invoice button right here below <---
                 tbody.innerHTML += `<tr>
@@ -1237,6 +1269,7 @@
                     <td>${order.gross.toFixed(2)}</td>
                     <td>${billingBadge}</td>
                     <td>${paidCheckbox}</td>
+                    <td style="text-align:center;">${statusIcon}</td>
                     <td>
                         <button class="btn-invoice" onclick="bridgeToInvoice(${order.id})">📄 Invoice</button>
                         <button class="btn-edit" onclick="editSalesOrder(${order.id})">Edit</button>
