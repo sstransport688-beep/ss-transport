@@ -864,7 +864,8 @@
                     vehicle: row['Vehicle'] || '',
                     gross: parseFloat(row['Gross (RM)']) || 0,
                     billing: row['Billing'] === 'Yes',
-                    paid: row['Paid'] === 'Yes'
+                    paid: row['Paid'] === 'Yes',
+                    invoiced: row['Paid'] === 'Yes' // Auto-set invoiced if paid
                 }));
 
                 expenses = expData.map(row => ({
@@ -1341,11 +1342,17 @@
             const order = salesOrders.find(o => o.id === id);
             if (!order) return;
             order.paid = checked;
+            // Auto-set invoiced status when paid
+            if (checked) {
+                order.invoiced = true;
+            }
             try {
                 await saveData();
+                renderSalesOrders();
             } catch (e) {
                 console.warn('Paid toggle sync failed', e);
                 order.paid = !checked;
+                if (checked) order.invoiced = false;
                 renderSalesOrders();
             }
         }
@@ -1371,7 +1378,8 @@
                 const isEditingThis = editingSalesId === order.id;
                 const paidCheckbox = `<input type="checkbox" class="paid-checkbox" ${order.paid ? 'checked' : ''} ${isEditingThis ? `onchange="togglePaidStatus(${order.id}, this.checked)"` : 'disabled'}>`;
                 const isInvoiced = order.invoiced || false;
-                const statusIcon = isInvoiced ? '<span title="Invoiced" style="cursor:pointer;" onclick="alertIconClick(' + order.id + ')">✅</span>' : '<span title="Not Invoiced" style="color:#d35400; cursor:pointer;" onclick="alertIconClick(' + order.id + ')">⚠️</span>';
+                const isPaid = order.paid || false;
+                const statusIcon = (isInvoiced || isPaid) ? '<span title="Invoiced/Paid" style="cursor:pointer;" onclick="alertIconClick(' + order.id + ')">✅</span>' : '<span title="Not Invoiced" style="color:#d35400; cursor:pointer;" onclick="alertIconClick(' + order.id + ')">⚠️</span>';
 
                 // ---> I added the Invoice button right here below <---
                 tbody.innerHTML += `<tr>
