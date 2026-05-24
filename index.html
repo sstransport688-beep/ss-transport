@@ -864,7 +864,8 @@
                     vehicle: row['Vehicle'] || '',
                     gross: parseFloat(row['Gross (RM)']) || 0,
                     billing: row['Billing'] === 'Yes',
-                    paid: row['Paid'] === 'Yes'
+                    paid: row['Paid'] === 'Yes',
+                    invoiced: row['Paid'] === 'Yes' // Auto-set invoiced if paid
                 }));
 
                 expenses = expData.map(row => ({
@@ -1341,11 +1342,17 @@
             const order = salesOrders.find(o => o.id === id);
             if (!order) return;
             order.paid = checked;
+            // Auto-set invoiced status when paid
+            if (checked) {
+                order.invoiced = true;
+            }
             try {
                 await saveData();
+                renderSalesOrders();
             } catch (e) {
                 console.warn('Paid toggle sync failed', e);
                 order.paid = !checked;
+                if (checked) order.invoiced = false;
                 renderSalesOrders();
             }
         }
