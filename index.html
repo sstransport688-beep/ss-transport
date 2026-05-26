@@ -651,11 +651,11 @@
                     <div class="full-width"><label>Address</label><input type="text" class="sync-input" data-target="prev-address"></div>
                     <div><label>Customer Account</label><input type="text" class="sync-input" data-target="prev-acc"></div>
                     <div><label>QT No.</label><input type="text" class="sync-input" data-target="prev-qt"></div>
-                    <div><label>Sales Executive</label><input type="text" class="sync-input" data-target="prev-exec"></div>
+                    <div><label>Sales Executive</label><input type="text" class="sync-input" data-target="prev-exec" value="LCT"></div>
                     <div><label>Currency</label><input type="text" class="sync-input" data-target="prev-curr" value="RM"></div>
                     <div><label>Invoice Date</label><input type="date" class="sync-input date-input" data-target="inv-date" id="input-date"></div>
                     <div><label>Rev/Page</label><input type="text" class="sync-input" data-target="prev-rev" value="001/1"></div>
-                    <div class="full-width"><label>Invoice No.</label><input type="text" class="sync-input" data-target="inv-so" id="invSalesOrderNo" placeholder="Enter Sales Order No"></div>
+                    <div class="full-width"><label>Invoice No.</label><input type="text" class="sync-input" data-target="inv-so" id="invSalesOrderNo" value="" placeholder="Enter Sales Order No"></div>
                 </div>
 
                 <div class="inv-section-title">📦 Items & Transport Details</div>
@@ -1012,21 +1012,21 @@
             invNoField.value = generateInvoiceNumber();
             invNoField.readOnly = false; // Allow editing if changes needed
             
-            // Set Default Values
-            document.querySelector('[data-target="prev-exec"]').value = 'LCT';
-            document.getElementById('invDriver').value = 'LCT';
-            document.querySelector('[data-target="prev-term"]').value = 'COD/Upon Job Delivered';
+            // Set Default Values - these are already set in HTML but ensure they're synced
+            const salesExecField = document.querySelector('[data-target="prev-exec"]');
+            const driverField = document.getElementById('invDriver');
+            const paymentTermField = document.querySelector('[data-target="prev-term"]');
             
             // Trigger input events to sync preview with default values
             invNoField.dispatchEvent(new Event('input'));
-            document.querySelector('[data-target="prev-exec"]').dispatchEvent(new Event('input'));
-            document.getElementById('invDriver').dispatchEvent(new Event('input'));
-            document.querySelector('[data-target="prev-term"]').dispatchEvent(new Event('input'));
+            salesExecField.dispatchEvent(new Event('input'));
+            driverField.dispatchEvent(new Event('input'));
+            paymentTermField.dispatchEvent(new Event('input'));
             
             // Sync the preview elements directly for initial load
-            document.getElementById('prev-exec').textContent = 'LCT';
-            document.getElementById('inv-driver').textContent = 'LCT';
-            document.getElementById('prev-term').textContent = 'COD/Upon Job Delivered';
+            document.getElementById('prev-exec').textContent = salesExecField.value;
+            document.getElementById('inv-driver').textContent = driverField.value;
+            document.getElementById('prev-term').textContent = paymentTermField.value;
         }
 
         function confirmDelete(message, callback) { if (confirm(message)) callback(); }
