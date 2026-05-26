@@ -830,6 +830,16 @@
             return prefix + String(nextNum).padStart(3,'0');
         }
 
+        function generateInvoiceNumber() {
+            const now = new Date();
+            const year = String(now.getFullYear()).slice(-2);
+            const prefix = `SS-INV-`;
+            const existing = salesOrders.filter(o => o.invoiceNumber && o.invoiceNumber.startsWith(prefix))
+                                        .map(o => parseInt(o.invoiceNumber.replace(prefix, '').replace(year, ''),10)).filter(n => !isNaN(n));
+            const nextNum = existing.length ? Math.max(...existing) + 1 : 1;
+            return prefix + String(nextNum).padStart(4,'0') + year;
+        }
+
         // ================== DATA LOADING ==================
         async function loadData(showSpinner = false) {
             if (showSpinner) showLoading();
@@ -1192,10 +1202,16 @@
             // Switch to Invoice tab
             switchTab('invoice');
             
+            // Generate invoice number if not already assigned
+            if (!order.invoiceNumber) {
+                order.invoiceNumber = generateInvoiceNumber();
+                saveData();
+            }
+            
             // Fill in invoice details from sales order
             const soInput = document.getElementById('invSalesOrderNo');
-            soInput.value = order.orderNumber || order.quotationNumber || '';
-            soInput.readOnly = !!order.orderNumber; // Make uneditable if confirmed
+            soInput.value = order.invoiceNumber || order.orderNumber || order.quotationNumber || '';
+            soInput.readOnly = true; // Always make uneditable when coming from sales order
             
             document.querySelector('[data-target="prev-company"]').value = order.clientSender || '';
             document.querySelector('[data-target="inv-date"]').value = order.date || '';
@@ -1205,6 +1221,12 @@
             document.getElementById('invLocTo').value = order.destTo || '';
             document.getElementById('invVehicleType').value = order.vehicle || '';
             
+            // Fill in QT No and Sales Executive if available
+            const qtInput = document.querySelector('[data-target="prev-qt"]');
+            if (qtInput && order.quotationNumber) {
+                qtInput.value = order.quotationNumber;
+            }
+            
             // Trigger input events to update preview
             soInput.dispatchEvent(new Event('input'));
             document.querySelector('[data-target="prev-company"]').dispatchEvent(new Event('input'));
@@ -1212,6 +1234,7 @@
             document.getElementById('invLocFrom').dispatchEvent(new Event('input'));
             document.getElementById('invLocTo').dispatchEvent(new Event('input'));
             document.getElementById('invVehicleType').dispatchEvent(new Event('input'));
+            if (qtInput) qtInput.dispatchEvent(new Event('input'));
             
             // Add automatic item row
             document.getElementById('itemsBody').innerHTML = '';
@@ -1222,7 +1245,7 @@
             saveData();
             renderSalesOrders();
             
-            alert('Sales Order data loaded into Invoice Generator!');
+            alert('Sales Order data loaded into Invoice Generator!\nInvoice No: ' + order.invoiceNumber);
         }
 
         // Function to convert quotation to confirmed sales order
@@ -2027,7 +2050,7 @@
                     
                     // Ask if this should be imported as sales order data (only if not from existing SO)
                     let shouldCreateSalesOrder = false;
-                    const existingOrder = salesOrders.find(o => o.orderNumber === soNo);
+                    const existingOrder = salesOrders.find(o => o.orderNumber === soNo || o.invoiceNumber === soNo);
                     
                     // Only ask if this is NOT from an existing sales order
                     if (!existingOrder && clientName) {
@@ -2054,7 +2077,8 @@
                         
                         const newOrder = {
                             id: Date.now(),
-                            orderNumber: 'SO-' + Date.now().toString().slice(-6),
+                            orderNumber: generateOrderNumber(),
+                            invoiceNumber: generateInvoiceNumber(),
                             date: dateValue,
                             clientSender: clientName,
                             destFrom: destFrom,
@@ -2070,7 +2094,7 @@
                         saveData();
                         renderSalesOrders();
                         
-                        alert('New sales order created: ' + newOrder.orderNumber);
+                        alert('New sales order created: ' + newOrder.orderNumber + '\nInvoice No: ' + newOrder.invoiceNumber);
                     }
                     
                     const opt = {
