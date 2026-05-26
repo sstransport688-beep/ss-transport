@@ -1022,11 +1022,6 @@
             salesExecField.dispatchEvent(new Event('input'));
             driverField.dispatchEvent(new Event('input'));
             paymentTermField.dispatchEvent(new Event('input'));
-            
-            // Sync the preview elements directly for initial load
-            document.getElementById('prev-exec').textContent = salesExecField.value;
-            document.getElementById('inv-driver').textContent = driverField.value;
-            document.getElementById('prev-term').textContent = paymentTermField.value;
         }
 
         function confirmDelete(message, callback) { if (confirm(message)) callback(); }
