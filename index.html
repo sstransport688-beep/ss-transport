@@ -655,7 +655,7 @@
                     <div><label>Currency</label><input type="text" class="sync-input" data-target="prev-curr" value="RM"></div>
                     <div><label>Invoice Date</label><input type="date" class="sync-input date-input" data-target="inv-date" id="input-date"></div>
                     <div><label>Rev/Page</label><input type="text" class="sync-input" data-target="prev-rev" value="001/1"></div>
-                    <div class="full-width"><label>Sales Order No.</label><input type="text" class="sync-input" data-target="inv-so" id="invSalesOrderNo" readonly></div>
+                    <div class="full-width"><label>Invoice No.</label><input type="text" class="sync-input" data-target="inv-so" id="invSalesOrderNo" readonly></div>
                 </div>
 
                 <div class="inv-section-title">📦 Items & Transport Details</div>
@@ -717,7 +717,7 @@
                         <div><strong>Currency:</strong> <span id="prev-curr">RM</span></div>
                         <div><strong>Date:</strong> <span id="inv-date" class="date-display">-</span></div>
                         <div><strong>Rev/Page:</strong> <span id="prev-rev">001/1</span></div>
-                        <div><strong>Sales Order No.:</strong> <span id="inv-so">-</span></div>
+                        <div><strong>Invoice No.:</strong> <span id="inv-so">-</span></div>
                         <div></div>
                     </div>
 
@@ -1008,15 +1008,15 @@
         // Prepare form for a new invoice (Auto-generate number and set defaults)
         function prepareNewInvoice() {
             // Generate new invoice number if empty or reset
-            const invNoField = document.getElementById('inv-no');
+            const invNoField = document.getElementById('invSalesOrderNo');
             if (!invNoField.value || invNoField.value.startsWith('SSSO-') || invNoField.value.startsWith('QT-')) {
                 invNoField.value = generateInvoiceNumber();
             }
             
             // Set Default Values
-            document.getElementById('inv-sales-exec').value = 'LCT';
-            document.getElementById('inv-driver').value = 'LCT';
-            document.getElementById('inv-payment-term').value = 'COD/Upon Job Delivered';
+            document.querySelector('[data-target="prev-exec"]').value = 'LCT';
+            document.getElementById('invDriver').value = 'LCT';
+            document.querySelector('[data-target="prev-term"]').value = 'COD/Upon Job Delivered';
             
             // Trigger preview update to show the new number and defaults
             updateInvoicePreview();
