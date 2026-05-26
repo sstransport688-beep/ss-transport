@@ -496,6 +496,9 @@
         <div class="form-row"><label for="soVehicle">Vehicle Type:<span class="mandatory">*</span></label><div class="input-container"><select id="soVehicle" onchange="handleVehicleTypeChange()"></select></div></div>
         <div class="form-row hidden" id="customVehicleRow"><label for="customVehicle">Custom Type:</label><div class="input-container"><input type="text" id="customVehicle" placeholder="Enter new vehicle type"></div></div>
         <div class="form-row"><label for="soGross">Gross Price (RM):<span class="mandatory">*</span></label><div class="input-container"><input type="number" id="soGross" step="0.01" placeholder="0.00"></div></div>
+        <div class="form-row"><label>Sales Executive:</label><div class="input-container"><input type="text" id="soSalesExec" value="LCT" placeholder="Sales Executive"></div></div>
+        <div class="form-row"><label>Driver Name:</label><div class="input-container"><input type="text" id="soDriverName" value="LCT" placeholder="Driver Name"></div></div>
+        <div class="form-row"><label>Payment Term:</label><div class="input-container"><input type="text" id="soPaymentTerm" value="COD/Upon Job Delivered" placeholder="Payment Term"></div></div>
         <div class="form-row"><label>Billing:</label><div class="input-container checkbox-container"><input type="checkbox" id="soBilling" style="margin:0;"><span style="font-weight:normal;">Mark as billing order</span></div></div>
         <div class="form-row"><label>Paid:</label><div class="input-container checkbox-container"><input type="checkbox" id="soPaid" style="margin:0;"><span style="font-weight:normal;">Mark as paid</span></div></div>
 
@@ -875,7 +878,10 @@
                     gross: parseFloat(row['Gross (RM)']) || 0,
                     billing: row['Billing'] === 'Yes',
                     paid: row['Paid'] === 'Yes',
-                    invoiced: row['Paid'] === 'Yes' // Auto-set invoiced if paid
+                    invoiced: row['Paid'] === 'Yes', // Auto-set invoiced if paid
+                    salesExecutive: row['Sales Executive'] || 'LCT',
+                    driverName: row['Driver Name'] || 'LCT',
+                    paymentTerm: row['Payment Term'] || 'COD/Upon Job Delivered'
                 }));
 
                 expenses = expData.map(row => ({
@@ -901,12 +907,15 @@
 
         // ================== SAVE DATA ==================
         async function saveData() {
-            const salesHeaders = ['Quotation No','Sales Order No','Date','Client/Sender','Destination From','Destination To','Vehicle','Gross (RM)','Billing','Paid'];
+            const salesHeaders = ['Quotation No','Sales Order No','Date','Client/Sender','Destination From','Destination To','Vehicle','Gross (RM)','Billing','Paid','Sales Executive','Driver Name','Payment Term'];
             const salesArray = salesOrders.map(o => [
                 o.quotationNumber || '',
                 o.orderNumber, o.date, o.clientSender, o.destFrom, o.destTo, o.vehicle, o.gross,
                 o.billing ? 'Yes' : 'No',
-                o.paid ? 'Yes' : 'No'
+                o.paid ? 'Yes' : 'No',
+                o.salesExecutive || 'LCT',
+                o.driverName || 'LCT',
+                o.paymentTerm || 'COD/Upon Job Delivered'
             ]);
             const expHeaders = ['Bill No','Co name','Date','Description','Amount (RM)'];
             const expArray = expenses.map(e => [e.billNo, e.coName, e.date, e.description, e.amount]);
@@ -1123,6 +1132,9 @@
             document.getElementById('soGross').value = order.gross;
             document.getElementById('soBilling').checked = order.billing || false;
             document.getElementById('soPaid').checked = order.paid || false;
+            document.getElementById('soSalesExec').value = order.salesExecutive || 'LCT';
+            document.getElementById('soDriverName').value = order.driverName || 'LCT';
+            document.getElementById('soPaymentTerm').value = order.paymentTerm || 'COD/Upon Job Delivered';
             buildVehicleOptions(order.vehicle);
             
             // Show quotation number if exists (unconfirmed sales)
@@ -1157,6 +1169,9 @@
             document.getElementById('soDestTo').value = '';
             document.getElementById('soVehicle').value = STANDARD_VEHICLES[0]; hideCustomVehicleInput();
             document.getElementById('soGross').value = '';
+            document.getElementById('soSalesExec').value = 'LCT';
+            document.getElementById('soDriverName').value = 'LCT';
+            document.getElementById('soPaymentTerm').value = 'COD/Upon Job Delivered';
             document.getElementById('soBilling').checked = false;
             document.getElementById('soPaid').checked = false;
             document.getElementById('quotationNoRow').style.display = 'none';
@@ -1220,11 +1235,20 @@
             document.getElementById('invLocFrom').value = order.destFrom || '';
             document.getElementById('invLocTo').value = order.destTo || '';
             document.getElementById('invVehicleType').value = order.vehicle || '';
+            document.getElementById('invDriver').value = order.driverName || 'LCT';
             
-            // Fill in QT No and Sales Executive if available
+            // Fill in QT No, Sales Executive and Payment Term if available
             const qtInput = document.querySelector('[data-target="prev-qt"]');
             if (qtInput && order.quotationNumber) {
                 qtInput.value = order.quotationNumber;
+            }
+            const execInput = document.querySelector('[data-target="prev-exec"]');
+            if (execInput) {
+                execInput.value = order.salesExecutive || 'LCT';
+            }
+            const termInput = document.querySelector('[data-target="prev-term"]');
+            if (termInput) {
+                termInput.value = order.paymentTerm || 'COD/Upon Job Delivered';
             }
             
             // Trigger input events to update preview
@@ -1234,7 +1258,10 @@
             document.getElementById('invLocFrom').dispatchEvent(new Event('input'));
             document.getElementById('invLocTo').dispatchEvent(new Event('input'));
             document.getElementById('invVehicleType').dispatchEvent(new Event('input'));
+            document.getElementById('invDriver').dispatchEvent(new Event('input'));
             if (qtInput) qtInput.dispatchEvent(new Event('input'));
+            if (execInput) execInput.dispatchEvent(new Event('input'));
+            if (termInput) termInput.dispatchEvent(new Event('input'));
             
             // Add automatic item row
             document.getElementById('itemsBody').innerHTML = '';
@@ -1328,7 +1355,10 @@
                 vehicle,
                 gross: parseFloat(document.getElementById('soGross').value) || 0,
                 billing: document.getElementById('soBilling').checked,
-                paid: document.getElementById('soPaid').checked
+                paid: document.getElementById('soPaid').checked,
+                salesExecutive: document.getElementById('soSalesExec').value.trim() || 'LCT',
+                driverName: document.getElementById('soDriverName').value.trim() || 'LCT',
+                paymentTerm: document.getElementById('soPaymentTerm').value.trim() || 'COD/Upon Job Delivered'
             };
             if (editingSalesId) {
                 const existing = salesOrders.find(o => o.id === editingSalesId);
@@ -1622,7 +1652,10 @@
                         vehicle,
                         gross,
                         billing,
-                        paid
+                        paid,
+                        salesExecutive: colIndex['Sales Executive'] ? (row[colIndex['Sales Executive']] || 'LCT') : 'LCT',
+                        driverName: colIndex['Driver Name'] ? (row[colIndex['Driver Name']] || 'LCT') : 'LCT',
+                        paymentTerm: colIndex['Payment Term'] ? (row[colIndex['Payment Term']] || 'COD/Upon Job Delivered') : 'COD/Upon Job Delivered'
                     });
                     count++;
                 }
