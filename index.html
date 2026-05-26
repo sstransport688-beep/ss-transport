@@ -651,7 +651,7 @@
                     <div class="full-width"><label>Address</label><input type="text" class="sync-input" data-target="prev-address"></div>
                     <div><label>Customer Account</label><input type="text" class="sync-input" data-target="prev-acc"></div>
                     <div><label>QT No.</label><input type="text" class="sync-input" data-target="prev-qt"></div>
-                    <div><label>Sales Executive</label><input type="text" class="sync-input" data-target="prev-exec" value="LCT"></div>
+                    <div><label>Sales Executive</label><input type="text" class="sync-input" data-target="prev-exec"></div>
                     <div><label>Currency</label><input type="text" class="sync-input" data-target="prev-curr" value="RM"></div>
                     <div><label>Invoice Date</label><input type="date" class="sync-input date-input" data-target="inv-date" id="input-date"></div>
                     <div><label>Rev/Page</label><input type="text" class="sync-input" data-target="prev-rev" value="001/1"></div>
@@ -663,7 +663,7 @@
                     <div><label>Location From</label><input type="text" class="sync-input" data-target="prev-loc-from" id="invLocFrom" placeholder="Pick-up location"></div>
                     <div><label>Location To</label><input type="text" class="sync-input" data-target="prev-loc-to" id="invLocTo" placeholder="Drop-off location"></div>
                     <div><label>Vehicle/Lorry Type</label><input type="text" class="sync-input" data-target="prev-vehicle-type" id="invVehicleType" placeholder="e.g., 14ft Lorry"></div>
-                    <div><label>Driver Name</label><input type="text" class="sync-input" data-target="inv-driver" id="invDriver" value="LCT"></div>
+                    <div><label>Driver Name</label><input type="text" class="sync-input" data-target="inv-driver" id="invDriver"></div>
                 </div>
                 <div class="table-wrapper">
                     <table id="editorTable">
@@ -684,7 +684,7 @@
 
                 <div class="inv-section-title">💰 Payment Details</div>
                 <div class="inv-form-grid">
-                    <div><label>Payment Term</label><input type="text" class="sync-input" data-target="prev-term" value="COD/Upon Job Delivered"></div>
+                    <div><label>Payment Term</label><input type="text" class="sync-input" data-target="prev-term"></div>
                     <div><label>Bank / Wallet</label><input type="text" class="sync-input" data-target="prev-bank" value="Touch and Go"></div>
                     <div><label>Account No.</label><input type="text" class="sync-input" data-target="prev-accNo" value="161165967763"></div>
                     <div><label>Holder</label><input type="text" class="sync-input" data-target="prev-holder" value="Leong Chun Tuck"></div>
@@ -750,7 +750,7 @@
                     <div class="grand-total">TOTAL: <span id="prev-curr-label">RM</span> <span id="grand-total">0.00</span></div>
 
                     <div class="payment-section">
-                        <div><strong>Payment:</strong> <span id="prev-term">COD/Upon Job Delivered</span></div>
+                        <div><strong>Payment:</strong> <span id="prev-term"></span></div>
                         <div><strong>Bank:</strong> <span id="prev-bank">Touch and Go</span></div>
                         <div><strong>ACC No:</strong> <span id="prev-accNo">161165967763</span></div>
                         <div><strong>Holder:</strong> <span id="prev-holder">Leong Chun Tuck</span></div>
@@ -887,9 +887,9 @@
                     billing: row['Billing'] === 'Yes',
                     paid: row['Paid'] === 'Yes',
                     invoiced: row['Paid'] === 'Yes', // Auto-set invoiced if paid
-                    salesExecutive: row['Sales Executive'] || 'LCT',
-                    driverName: row['Driver Name'] || 'LCT',
-                    paymentTerm: row['Payment Term'] || 'COD/Upon Job Delivered'
+                    salesExecutive: row['Sales Executive'] || '',
+                    driverName: row['Driver Name'] || '',
+                    paymentTerm: row['Payment Term'] || ''
                 }));
 
                 expenses = expData.map(row => ({
@@ -921,9 +921,9 @@
                 o.orderNumber, o.date, o.clientSender, o.destFrom, o.destTo, o.vehicle, o.gross,
                 o.billing ? 'Yes' : 'No',
                 o.paid ? 'Yes' : 'No',
-                o.salesExecutive || 'LCT',
-                o.driverName || 'LCT',
-                o.paymentTerm || 'COD/Upon Job Delivered'
+                o.salesExecutive || '',
+                o.driverName || '',
+                o.paymentTerm || ''
             ]);
             const expHeaders = ['Bill No','Co name','Date','Description','Amount (RM)'];
             const expArray = expenses.map(e => [e.billNo, e.coName, e.date, e.description, e.amount]);
@@ -1165,9 +1165,9 @@
             document.getElementById('soGross').value = order.gross;
             document.getElementById('soBilling').checked = order.billing || false;
             document.getElementById('soPaid').checked = order.paid || false;
-            document.getElementById('soSalesExec').value = order.salesExecutive || 'LCT';
-            document.getElementById('soDriverName').value = order.driverName || 'LCT';
-            document.getElementById('soPaymentTerm').value = order.paymentTerm || 'COD/Upon Job Delivered';
+            document.getElementById('soSalesExec').value = order.salesExecutive || '';
+            document.getElementById('soDriverName').value = order.driverName || '';
+            document.getElementById('soPaymentTerm').value = order.paymentTerm || '';
             buildVehicleOptions(order.vehicle);
             
             // Show quotation number if exists (unconfirmed sales)
@@ -1202,9 +1202,9 @@
             document.getElementById('soDestTo').value = '';
             document.getElementById('soVehicle').value = STANDARD_VEHICLES[0]; hideCustomVehicleInput();
             document.getElementById('soGross').value = '';
-            document.getElementById('soSalesExec').value = 'LCT';
-            document.getElementById('soDriverName').value = 'LCT';
-            document.getElementById('soPaymentTerm').value = 'COD/Upon Job Delivered';
+            document.getElementById('soSalesExec').value = '';
+            document.getElementById('soDriverName').value = '';
+            document.getElementById('soPaymentTerm').value = '';
             document.getElementById('soBilling').checked = false;
             document.getElementById('soPaid').checked = false;
             document.getElementById('quotationNoRow').style.display = 'none';
@@ -1268,7 +1268,7 @@
             document.getElementById('invLocFrom').value = order.destFrom || '';
             document.getElementById('invLocTo').value = order.destTo || '';
             document.getElementById('invVehicleType').value = order.vehicle || '';
-            document.getElementById('invDriver').value = order.driverName || 'LCT';
+            document.getElementById('invDriver').value = order.driverName || '';
             
             // Fill in QT No, Sales Executive and Payment Term if available
             const qtInput = document.querySelector('[data-target="prev-qt"]');
@@ -1277,11 +1277,11 @@
             }
             const execInput = document.querySelector('[data-target="prev-exec"]');
             if (execInput) {
-                execInput.value = order.salesExecutive || 'LCT';
+                execInput.value = order.salesExecutive || '';
             }
             const termInput = document.querySelector('[data-target="prev-term"]');
             if (termInput) {
-                termInput.value = order.paymentTerm || 'COD/Upon Job Delivered';
+                termInput.value = order.paymentTerm || '';
             }
             
             // Trigger input events to update preview
@@ -1407,9 +1407,9 @@
                 gross: parseFloat(document.getElementById('soGross').value) || 0,
                 billing: document.getElementById('soBilling').checked,
                 paid: document.getElementById('soPaid').checked,
-                salesExecutive: document.getElementById('soSalesExec').value.trim() || 'LCT',
-                driverName: document.getElementById('soDriverName').value.trim() || 'LCT',
-                paymentTerm: document.getElementById('soPaymentTerm').value.trim() || 'COD/Upon Job Delivered'
+                salesExecutive: document.getElementById('soSalesExec').value.trim(),
+                driverName: document.getElementById('soDriverName').value.trim(),
+                paymentTerm: document.getElementById('soPaymentTerm').value.trim()
             };
             if (editingSalesId) {
                 const existing = salesOrders.find(o => o.id === editingSalesId);
@@ -1704,9 +1704,9 @@
                         gross,
                         billing,
                         paid,
-                        salesExecutive: colIndex['Sales Executive'] ? (row[colIndex['Sales Executive']] || 'LCT') : 'LCT',
-                        driverName: colIndex['Driver Name'] ? (row[colIndex['Driver Name']] || 'LCT') : 'LCT',
-                        paymentTerm: colIndex['Payment Term'] ? (row[colIndex['Payment Term']] || 'COD/Upon Job Delivered') : 'COD/Upon Job Delivered'
+                        salesExecutive: colIndex['Sales Executive'] ? (row[colIndex['Sales Executive']] || '') : '',
+                        driverName: colIndex['Driver Name'] ? (row[colIndex['Driver Name']] || '') : '',
+                        paymentTerm: colIndex['Payment Term'] ? (row[colIndex['Payment Term']] || '') : ''
                     });
                     count++;
                 }
