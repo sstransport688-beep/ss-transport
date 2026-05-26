@@ -1002,6 +1002,24 @@
             
             if (tabName === 'sales') { buildVehicleOptions(); applySalesFilter(); }
             if (tabName === 'expenses') { applyExpenseFilter(); }
+            if (tabName === 'invoice') { prepareNewInvoice(); }
+        }
+
+        // Prepare form for a new invoice (Auto-generate number and set defaults)
+        function prepareNewInvoice() {
+            // Generate new invoice number if empty or reset
+            const invNoField = document.getElementById('inv-no');
+            if (!invNoField.value || invNoField.value.startsWith('SSSO-') || invNoField.value.startsWith('QT-')) {
+                invNoField.value = generateInvoiceNumber();
+            }
+            
+            // Set Default Values
+            document.getElementById('inv-sales-exec').value = 'LCT';
+            document.getElementById('inv-driver').value = 'LCT';
+            document.getElementById('inv-payment-term').value = 'COD/Upon Job Delivered';
+            
+            // Trigger preview update to show the new number and defaults
+            updateInvoicePreview();
         }
 
         function confirmDelete(message, callback) { if (confirm(message)) callback(); }
