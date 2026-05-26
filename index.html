@@ -1007,9 +1007,10 @@
 
         // Prepare form for a new invoice (Auto-generate number and set defaults)
         function prepareNewInvoice() {
-            // Clear invoice number field - user must enter manually
+            // Auto-generate Sales Order No when accessing Invoice Generator
             const invNoField = document.getElementById('invSalesOrderNo');
-            invNoField.value = '';
+            invNoField.value = generateInvoiceNumber();
+            invNoField.readOnly = false; // Allow editing if changes needed
             
             // Set Default Values
             document.querySelector('[data-target="prev-exec"]').value = 'LCT';
@@ -1017,6 +1018,7 @@
             document.querySelector('[data-target="prev-term"]').value = 'COD/Upon Job Delivered';
             
             // Trigger input events to sync preview with default values
+            invNoField.dispatchEvent(new Event('input'));
             document.querySelector('[data-target="prev-exec"]').dispatchEvent(new Event('input'));
             document.getElementById('invDriver').dispatchEvent(new Event('input'));
             document.querySelector('[data-target="prev-term"]').dispatchEvent(new Event('input'));
