@@ -655,7 +655,7 @@
                     <div><label>Currency</label><input type="text" class="sync-input" data-target="prev-curr" value="RM"></div>
                     <div><label>Invoice Date</label><input type="date" class="sync-input date-input" data-target="inv-date" id="input-date"></div>
                     <div><label>Rev/Page</label><input type="text" class="sync-input" data-target="prev-rev" value="001/1"></div>
-                    <div class="full-width"><label>Sales Order No.</label><input type="text" class="sync-input" data-target="inv-so" id="invSalesOrderNo"></div>
+                    <div class="full-width"><label>Sales Order No.</label><input type="text" class="sync-input" data-target="inv-so" id="invSalesOrderNo" readonly></div>
                 </div>
 
                 <div class="inv-section-title">📦 Items & Transport Details</div>
@@ -1226,7 +1226,7 @@
             // Fill in invoice details from sales order
             const soInput = document.getElementById('invSalesOrderNo');
             soInput.value = order.invoiceNumber || order.orderNumber || order.quotationNumber || '';
-            soInput.readOnly = true; // Always make uneditable when coming from sales order
+            // readOnly attribute is already set in HTML
             
             document.querySelector('[data-target="prev-company"]').value = order.clientSender || '';
             document.querySelector('[data-target="inv-date"]').value = order.date || '';
