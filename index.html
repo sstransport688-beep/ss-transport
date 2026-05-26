@@ -843,6 +843,14 @@
             return prefix + String(nextNum).padStart(4,'0') + year;
         }
 
+        // ================== INVOICE GENERATOR PRELOAD DEFAULTS ==================
+        // These are the default values that get preloaded when creating a new invoice
+        const INVOICE_DEFAULTS = {
+            salesExecutive: 'LCT',
+            driverName: 'LCT',
+            paymentTerm: 'COD/Upon Job Delivered'
+        };
+
         // ================== DATA LOADING ==================
         async function loadData(showSpinner = false) {
             if (showSpinner) showLoading();
@@ -1012,10 +1020,15 @@
             invNoField.value = generateInvoiceNumber();
             invNoField.readOnly = false; // Allow editing if changes needed
             
-            // Set Default Values - these are already set in HTML but ensure they're synced
+            // Set Default Values - Preload like Payment Details section
             const salesExecField = document.querySelector('[data-target="prev-exec"]');
             const driverField = document.getElementById('invDriver');
             const paymentTermField = document.querySelector('[data-target="prev-term"]');
+            
+            // Preload default values (Sales Executive: LCT, Driver: LCT, Payment Term: COD/Upon Job Delivered)
+            salesExecField.value = INVOICE_DEFAULTS.salesExecutive;
+            driverField.value = INVOICE_DEFAULTS.driverName;
+            paymentTermField.value = INVOICE_DEFAULTS.paymentTerm;
             
             // Trigger input events to sync preview with default values
             invNoField.dispatchEvent(new Event('input'));
@@ -1348,6 +1361,21 @@
             document.getElementById('invVehicleType').value = order.vehicle || '';
             document.querySelector('[data-target="prev-address"]').value = order.destFrom || '';
             
+            // Preload Sales Executive, Driver Name, and Payment Term (like bridgeToInvoice)
+            const execInput = document.querySelector('[data-target="prev-exec"]');
+            const driverField = document.getElementById('invDriver');
+            const termInput = document.querySelector('[data-target="prev-term"]');
+            
+            if (execInput) {
+                execInput.value = order.salesExecutive || INVOICE_DEFAULTS.salesExecutive;
+            }
+            if (driverField) {
+                driverField.value = order.driverName || INVOICE_DEFAULTS.driverName;
+            }
+            if (termInput) {
+                termInput.value = order.paymentTerm || INVOICE_DEFAULTS.paymentTerm;
+            }
+            
             // Populate items section with order data
             document.getElementById('itemsBody').innerHTML = '';
             addInvoiceItem(`Transport: ${order.destFrom} to ${order.destTo} (${order.vehicle})`, order.gross, 1);
@@ -1360,6 +1388,9 @@
             document.getElementById('invLocTo').dispatchEvent(new Event('input'));
             document.getElementById('invVehicleType').dispatchEvent(new Event('input'));
             document.querySelector('[data-target="prev-address"]').dispatchEvent(new Event('input'));
+            if (execInput) execInput.dispatchEvent(new Event('input'));
+            if (driverField) driverField.dispatchEvent(new Event('input'));
+            if (termInput) termInput.dispatchEvent(new Event('input'));
         }
 
         async function addOrUpdateSalesOrder() {
