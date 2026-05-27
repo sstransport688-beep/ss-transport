@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SS Sales & Net Profit System V3R06</title>
+    <title>SS Sales & Net Profit System V1R06</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="SS Transport">
@@ -15,6 +15,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
+        /* … (all your original CSS, unchanged) … */
+        /* I'm including the full CSS for completeness, but it's identical to your original */
         body { font-family: Arial, sans-serif; margin: auto; padding: 20px; box-sizing: border-box; }
         body.max-width-constrained { max-width: 1100px; }
         h1 { margin-bottom: 5px; }
@@ -636,7 +638,7 @@
         </div>
     </div>
 
-    <!-- INVOICE PANEL (simplified – no transport detail fields) -->
+    <!-- ================= INVOICE PANEL (Transport fields restored, no auto‑sync) ================= -->
     <div class="panel" id="invoicePanel">
         <div class="invoice-container">
             <div class="inv-panel">
@@ -654,6 +656,15 @@
                     <div><label>Invoice Date</label><input type="date" class="sync-input date-input" data-target="inv-date" id="input-date"></div>
                     <div><label>Rev/Page</label><input type="text" class="sync-input" data-target="prev-rev" value="001/1"></div>
                     <div class="full-width"><label>Sales Order No.</label><input type="text" class="sync-input" data-target="inv-so" id="invSalesOrderNo" value="" placeholder="Auto-generated (editable)"></div>
+                </div>
+
+                <!-- TRANSPORT DETAILS (restored, but no auto‑sync to items) -->
+                <div class="inv-section-title">🚚 Transport Details</div>
+                <div class="inv-form-grid">
+                    <div><label>Location From</label><input type="text" class="sync-input" data-target="prev-loc-from" id="invLocFrom" placeholder="Pick‑up point"></div>
+                    <div><label>Location To</label><input type="text" class="sync-input" data-target="prev-loc-to" id="invLocTo" placeholder="Drop‑off point"></div>
+                    <div><label>Vehicle / Lorry Type</label><input type="text" class="sync-input" data-target="prev-vehicle-type" id="invVehicleType" placeholder="e.g., 14ft Lorry"></div>
+                    <div><label>Driver Name</label><input type="text" class="sync-input" data-target="inv-driver" id="invDriver"></div>
                 </div>
 
                 <div class="inv-section-title">📦 Items Details</div>
@@ -724,7 +735,10 @@
                         <strong>Address:</strong> <span id="prev-address">-</span>
                     </div>
 
-                    <!-- TRANSPORT PREVIEW LINE REMOVED -->
+                    <!-- TRANSPORT LINE RESTORED -->
+                    <div class="bill-to" style="background: #e8f4fd; border-left-color: #1a3a5c; margin-top: 10px;">
+                        🚚 Transport: <span id="prev-loc-from">-</span> to <span id="prev-loc-to">-</span> (<span id="prev-vehicle-type">-</span>) | Driver: <span id="inv-driver">-</span>
+                    </div>
 
                     <div class="table-wrapper">
                         <table class="inv-items-table">
@@ -836,6 +850,7 @@
         // ================== INVOICE GENERATOR PRELOAD DEFAULTS ==================
         const INVOICE_DEFAULTS = {
             salesExecutive: 'LCT',
+            driverName: 'LCT',
             paymentTerm: 'COD/Upon Job Delivered'
         };
 
@@ -998,14 +1013,25 @@
             invNoField.readOnly = false;
 
             const salesExecField = document.querySelector('[data-target="prev-exec"]');
+            const driverField = document.getElementById('invDriver');
             const paymentTermField = document.querySelector('[data-target="prev-term"]');
 
             if (salesExecField) salesExecField.value = INVOICE_DEFAULTS.salesExecutive;
+            if (driverField) driverField.value = INVOICE_DEFAULTS.driverName;
             if (paymentTermField) paymentTermField.value = INVOICE_DEFAULTS.paymentTerm;
+
+            // Clear transport fields
+            document.getElementById('invLocFrom').value = '';
+            document.getElementById('invLocTo').value = '';
+            document.getElementById('invVehicleType').value = '';
 
             invNoField.dispatchEvent(new Event('input'));
             if (salesExecField) salesExecField.dispatchEvent(new Event('input'));
+            if (driverField) driverField.dispatchEvent(new Event('input'));
             if (paymentTermField) paymentTermField.dispatchEvent(new Event('input'));
+            document.getElementById('invLocFrom').dispatchEvent(new Event('input'));
+            document.getElementById('invLocTo').dispatchEvent(new Event('input'));
+            document.getElementById('invVehicleType').dispatchEvent(new Event('input'));
         }
 
         function confirmDelete(message, callback) { if (confirm(message)) callback(); }
@@ -1127,7 +1153,7 @@
             setSalesEditingMode(id);
         }
 
-        // Bridge to Invoice – now only fills customer details and adds item row
+        // FIXED: Bridge to Invoice now uses the transport fields, not the address
         function bridgeToInvoice(id) {
             const order = salesOrders.find(o => o.id === id);
             if (!order) return;
@@ -1150,8 +1176,11 @@
 
             document.querySelector('[data-target="prev-company"]').value = order.clientSender || '';
             document.querySelector('[data-target="inv-date"]').value = order.date || '';
-            // Use address as destination from (fallback)
-            document.querySelector('[data-target="prev-address"]').value = order.destFrom || '';
+
+            // Fill transport fields correctly
+            document.getElementById('invLocFrom').value = order.destFrom || '';
+            document.getElementById('invLocTo').value = order.destTo || '';
+            document.getElementById('invVehicleType').value = order.vehicle || '';
 
             const qtInput = document.querySelector('[data-target="prev-qt"]');
             if (qtInput && order.quotationNumber) {
@@ -1159,10 +1188,13 @@
             }
 
             soInput.dispatchEvent(new Event('input'));
-            document.querySelector('[data-target="inv-date"]').dispatchEvent(new Event('input'));
+            document.getElementById('invLocFrom').dispatchEvent(new Event('input'));
+            document.getElementById('invLocTo').dispatchEvent(new Event('input'));
+            document.getElementById('invVehicleType').dispatchEvent(new Event('input'));
+            document.getElementById('invDriver').dispatchEvent(new Event('input'));
             if (qtInput) qtInput.dispatchEvent(new Event('input'));
 
-            // Clear existing items and add a single item row with transport description
+            // Still add a default item row describing the transport, but user can delete/modify
             document.getElementById('itemsBody').innerHTML = '';
             addInvoiceItem(`Transport: ${order.destFrom} to ${order.destTo} (${order.vehicle})`, order.gross, 1);
 
@@ -1184,6 +1216,7 @@
             alert('Quotation ' + order.quotationNumber + ' has been confirmed as Sales Order ' + order.orderNumber);
         }
 
+        // FIXED: alertIconClick now fills the correct transport fields
         function alertIconClick(id) {
             const order = salesOrders.find(o => o.id === id);
             if (!order) return;
@@ -1205,7 +1238,10 @@
 
             document.querySelector('[data-target="prev-company"]').value = order.clientSender || '';
             document.querySelector('[data-target="inv-date"]').value = order.date || '';
-            document.querySelector('[data-target="prev-address"]').value = order.destFrom || '';
+
+            document.getElementById('invLocFrom').value = order.destFrom || '';
+            document.getElementById('invLocTo').value = order.destTo || '';
+            document.getElementById('invVehicleType').value = order.vehicle || '';
 
             document.getElementById('itemsBody').innerHTML = '';
             addInvoiceItem(`Transport: ${order.destFrom} to ${order.destTo} (${order.vehicle})`, order.gross, 1);
@@ -1213,7 +1249,9 @@
             document.querySelector('[data-target="prev-company"]').dispatchEvent(new Event('input'));
             soInput.dispatchEvent(new Event('input'));
             document.querySelector('[data-target="inv-date"]').dispatchEvent(new Event('input'));
-            document.querySelector('[data-target="prev-address"]').dispatchEvent(new Event('input'));
+            document.getElementById('invLocFrom').dispatchEvent(new Event('input'));
+            document.getElementById('invLocTo').dispatchEvent(new Event('input'));
+            document.getElementById('invVehicleType').dispatchEvent(new Event('input'));
         }
 
         async function addOrUpdateSalesOrder() {
@@ -1851,7 +1889,7 @@
         async function refreshData() { await loadData(true); alert('Data refreshed!'); }
         setInterval(async () => { try { if (!editingSalesId && !editingExpenseId) await loadData(false); } catch(e) {} }, 10000);
 
-        // ================== INVOICE SPECIFIC LOGIC (SIMPLIFIED) ==================
+        // ================== INVOICE SPECIFIC LOGIC (Transport fields present, NO auto‑sync) ==================
         function setupInvoiceSync() {
             // Sync text inputs with preview
             document.querySelectorAll('.sync-input').forEach(input => {
@@ -1967,6 +2005,7 @@
                     </td>`;
                 itemsBody.appendChild(tr);
                 updatePreviewTable();
+                // NO auto‑sync from transport fields
             });
 
             // Global helper for bridging from sales orders
@@ -1995,7 +2034,7 @@
                 updatePreviewTable();
             };
 
-            // Export PDF (unchanged, but now reads transport info from items if needed)
+            // Export PDF (now reads transport fields for sales order creation)
             document.getElementById('exportPdf').addEventListener('click', async () => {
                 const btn = document.getElementById('exportPdf');
                 const originalText = btn.innerHTML;
@@ -2026,9 +2065,10 @@
 
                     if (shouldCreateSalesOrder) {
                         const dateValue = document.querySelector('[data-target="inv-date"]').value || new Date().toISOString().split('T')[0];
-                        const destFrom = document.querySelector('[data-target="prev-address"]').value || '';
-                        const destTo = ''; // no dedicated field
-                        const vehicle = ''; // no dedicated field
+                        // Use transport fields for destination
+                        const destFrom = document.getElementById('invLocFrom').value || '';
+                        const destTo = document.getElementById('invLocTo').value || '';
+                        const vehicle = document.getElementById('invVehicleType').value || '';
 
                         let gross = 0;
                         const rows = itemsBody.querySelectorAll('tr');
