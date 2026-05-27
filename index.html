@@ -496,9 +496,6 @@
         <div class="form-row"><label for="soVehicle">Vehicle Type:<span class="mandatory">*</span></label><div class="input-container"><select id="soVehicle" onchange="handleVehicleTypeChange()"></select></div></div>
         <div class="form-row hidden" id="customVehicleRow"><label for="customVehicle">Custom Type:</label><div class="input-container"><input type="text" id="customVehicle" placeholder="Enter new vehicle type"></div></div>
         <div class="form-row"><label for="soGross">Gross Price (RM):<span class="mandatory">*</span></label><div class="input-container"><input type="number" id="soGross" step="0.01" placeholder="0.00"></div></div>
-        <div class="form-row"><label>Sales Executive:</label><div class="input-container"><input type="text" id="soSalesExec" placeholder="Sales Executive"></div></div>
-        <div class="form-row"><label>Driver Name:</label><div class="input-container"><input type="text" id="soDriverName" placeholder="Driver Name"></div></div>
-        <div class="form-row"><label>Payment Term:</label><div class="input-container"><input type="text" id="soPaymentTerm" placeholder="Payment Term"></div></div>
         <div class="form-row"><label>Billing:</label><div class="input-container checkbox-container"><input type="checkbox" id="soBilling" style="margin:0;"><span style="font-weight:normal;">Mark as billing order</span></div></div>
         <div class="form-row"><label>Paid:</label><div class="input-container checkbox-container"><input type="checkbox" id="soPaid" style="margin:0;"><span style="font-weight:normal;">Mark as paid</span></div></div>
 
@@ -886,10 +883,7 @@
                     gross: parseFloat(row['Gross (RM)']) || 0,
                     billing: row['Billing'] === 'Yes',
                     paid: row['Paid'] === 'Yes',
-                    invoiced: row['Paid'] === 'Yes', // Auto-set invoiced if paid
-                    salesExecutive: row['Sales Executive'] || '',
-                    driverName: row['Driver Name'] || '',
-                    paymentTerm: row['Payment Term'] || ''
+                    invoiced: row['Paid'] === 'Yes' // Auto-set invoiced if paid
                 }));
 
                 expenses = expData.map(row => ({
@@ -915,15 +909,12 @@
 
         // ================== SAVE DATA ==================
         async function saveData() {
-            const salesHeaders = ['Quotation No','Sales Order No','Date','Client/Sender','Destination From','Destination To','Vehicle','Gross (RM)','Billing','Paid','Sales Executive','Driver Name','Payment Term'];
+            const salesHeaders = ['Quotation No','Sales Order No','Date','Client/Sender','Destination From','Destination To','Vehicle','Gross (RM)','Billing','Paid'];
             const salesArray = salesOrders.map(o => [
                 o.quotationNumber || '',
                 o.orderNumber, o.date, o.clientSender, o.destFrom, o.destTo, o.vehicle, o.gross,
                 o.billing ? 'Yes' : 'No',
-                o.paid ? 'Yes' : 'No',
-                o.salesExecutive || '',
-                o.driverName || '',
-                o.paymentTerm || ''
+                o.paid ? 'Yes' : 'No'
             ]);
             const expHeaders = ['Bill No','Co name','Date','Description','Amount (RM)'];
             const expArray = expenses.map(e => [e.billNo, e.coName, e.date, e.description, e.amount]);
@@ -1165,9 +1156,6 @@
             document.getElementById('soGross').value = order.gross;
             document.getElementById('soBilling').checked = order.billing || false;
             document.getElementById('soPaid').checked = order.paid || false;
-            document.getElementById('soSalesExec').value = order.salesExecutive || '';
-            document.getElementById('soDriverName').value = order.driverName || '';
-            document.getElementById('soPaymentTerm').value = order.paymentTerm || '';
             buildVehicleOptions(order.vehicle);
             
             // Show quotation number if exists (unconfirmed sales)
@@ -1202,9 +1190,6 @@
             document.getElementById('soDestTo').value = '';
             document.getElementById('soVehicle').value = STANDARD_VEHICLES[0]; hideCustomVehicleInput();
             document.getElementById('soGross').value = '';
-            document.getElementById('soSalesExec').value = '';
-            document.getElementById('soDriverName').value = '';
-            document.getElementById('soPaymentTerm').value = '';
             document.getElementById('soBilling').checked = false;
             document.getElementById('soPaid').checked = false;
             document.getElementById('quotationNoRow').style.display = 'none';
@@ -1268,26 +1253,15 @@
             document.getElementById('invLocFrom').value = order.destFrom || '';
             document.getElementById('invLocTo').value = order.destTo || '';
             document.getElementById('invVehicleType').value = order.vehicle || '';
-            document.getElementById('invDriver').value = order.driverName || '';
             
-            // Fill in QT No, Sales Executive and Payment Term if available
+            // Fill in QT No if available
             const qtInput = document.querySelector('[data-target="prev-qt"]');
             if (qtInput && order.quotationNumber) {
                 qtInput.value = order.quotationNumber;
             }
-            const execInput = document.querySelector('[data-target="prev-exec"]');
-            if (execInput) {
-                execInput.value = order.salesExecutive || '';
-            }
-            const termInput = document.querySelector('[data-target="prev-term"]');
-            if (termInput) {
-                termInput.value = order.paymentTerm || '';
-            }
             
             // Trigger input events to update preview
             soInput.dispatchEvent(new Event('input'));
-            document.querySelector('[data-target="prev-company"]').dispatchEvent(new Event('input'));
-            document.querySelector('[data-target="inv-date"]').dispatchEvent(new Event('input'));
             document.getElementById('invLocFrom').dispatchEvent(new Event('input'));
             document.getElementById('invLocTo').dispatchEvent(new Event('input'));
             document.getElementById('invVehicleType').dispatchEvent(new Event('input'));
@@ -1361,21 +1335,6 @@
             document.getElementById('invVehicleType').value = order.vehicle || '';
             document.querySelector('[data-target="prev-address"]').value = order.destFrom || '';
             
-            // Preload Sales Executive, Driver Name, and Payment Term (like bridgeToInvoice)
-            const execInput = document.querySelector('[data-target="prev-exec"]');
-            const driverField = document.getElementById('invDriver');
-            const termInput = document.querySelector('[data-target="prev-term"]');
-            
-            if (execInput) {
-                execInput.value = order.salesExecutive || INVOICE_DEFAULTS.salesExecutive;
-            }
-            if (driverField) {
-                driverField.value = order.driverName || INVOICE_DEFAULTS.driverName;
-            }
-            if (termInput) {
-                termInput.value = order.paymentTerm || INVOICE_DEFAULTS.paymentTerm;
-            }
-            
             // Populate items section with order data
             document.getElementById('itemsBody').innerHTML = '';
             addInvoiceItem(`Transport: ${order.destFrom} to ${order.destTo} (${order.vehicle})`, order.gross, 1);
@@ -1388,9 +1347,6 @@
             document.getElementById('invLocTo').dispatchEvent(new Event('input'));
             document.getElementById('invVehicleType').dispatchEvent(new Event('input'));
             document.querySelector('[data-target="prev-address"]').dispatchEvent(new Event('input'));
-            if (execInput) execInput.dispatchEvent(new Event('input'));
-            if (driverField) driverField.dispatchEvent(new Event('input'));
-            if (termInput) termInput.dispatchEvent(new Event('input'));
         }
 
         async function addOrUpdateSalesOrder() {
@@ -1406,10 +1362,7 @@
                 vehicle,
                 gross: parseFloat(document.getElementById('soGross').value) || 0,
                 billing: document.getElementById('soBilling').checked,
-                paid: document.getElementById('soPaid').checked,
-                salesExecutive: document.getElementById('soSalesExec').value.trim(),
-                driverName: document.getElementById('soDriverName').value.trim(),
-                paymentTerm: document.getElementById('soPaymentTerm').value.trim()
+                paid: document.getElementById('soPaid').checked
             };
             if (editingSalesId) {
                 const existing = salesOrders.find(o => o.id === editingSalesId);
@@ -1703,10 +1656,7 @@
                         vehicle,
                         gross,
                         billing,
-                        paid,
-                        salesExecutive: colIndex['Sales Executive'] ? (row[colIndex['Sales Executive']] || '') : '',
-                        driverName: colIndex['Driver Name'] ? (row[colIndex['Driver Name']] || '') : '',
-                        paymentTerm: colIndex['Payment Term'] ? (row[colIndex['Payment Term']] || '') : ''
+                        paid
                     });
                     count++;
                 }
