@@ -1869,7 +1869,7 @@
         async function refreshData() { await loadData(true); alert('Data refreshed!'); }
         setInterval(async () => { try { if (!editingSalesId && !editingExpenseId) await loadData(false); } catch(e) {} }, 10000);
 
-        // ================== INVOICE SPECIFIC LOGIC (FIXED) ==================
+        // ================== INVOICE SPECIFIC LOGIC (FIXED + AUTO‑SYNC) ==================
         function setupInvoiceSync() {
             // Sync text inputs with preview
             document.querySelectorAll('.sync-input').forEach(input => {
@@ -1960,7 +1960,7 @@
 
             // Add new row button – clear old listener and re-attach
             const addRowBtn = document.getElementById('addItem');
-            addRowBtn.replaceWith(addRowBtn.cloneNode(true)); // remove old listeners
+            addRowBtn.replaceWith(addRowBtn.cloneNode(true));
             const freshAddBtn = document.getElementById('addItem');
             freshAddBtn.addEventListener('click', () => {
                 const tr = document.createElement('tr');
@@ -1984,7 +1984,9 @@
                         <button class="btn-inv-remove remove-row">✕</button>
                     </td>`;
                 itemsBody.appendChild(tr);
-                updatePreviewTable(); // show the empty row immediately
+                updatePreviewTable();
+                // After adding a blank row, trigger transport sync so the first row gets the transport description
+                syncTransportItem();
             });
 
             // Global helper for bridging from sales orders
@@ -2013,7 +2015,54 @@
                 updatePreviewTable();
             };
 
-            // Export PDF
+            // ----- NEW: Auto‑sync transport details to the first item row -----
+            const locFrom = document.getElementById('invLocFrom');
+            const locTo   = document.getElementById('invLocTo');
+            const vehicleType = document.getElementById('invVehicleType');
+
+            const syncTransportItem = () => {
+                const from = locFrom.value.trim();
+                const to   = locTo.value.trim();
+                const v    = vehicleType.value.trim();
+
+                // Build transport description only if at least one field is filled
+                const parts = [];
+                if (from) parts.push(from);
+                if (to) parts.push(`to ${to}`);
+                if (v) parts.push(`(${v})`);
+                const transportDesc = parts.length > 0 ? `Transport: ${parts.join(' ')}` : '';
+
+                if (!transportDesc) return; // nothing to fill
+
+                const rows = itemsBody.querySelectorAll('tr');
+                if (rows.length === 0) {
+                    // No items yet – create one with the transport description
+                    addInvoiceItem(transportDesc, 0, 1);
+                } else {
+                    // Update the first row's description only if it seems to be a transport row
+                    const firstRow = rows[0];
+                    const descInput = firstRow.querySelector('.item-desc');
+                    if (descInput) {
+                        const currentDesc = descInput.value.trim();
+                        // Update if it's empty or already starts with "Transport:"
+                        if (!currentDesc || currentDesc.startsWith('Transport:')) {
+                            descInput.value = transportDesc;
+                            // Manually trigger update because delegated input doesn't fire on programmatic change
+                            updatePreviewTable();
+                        }
+                    }
+                }
+            };
+
+            // Listen for changes on the three transport fields
+            if (locFrom) locFrom.addEventListener('input', syncTransportItem);
+            if (locTo)   locTo.addEventListener('input', syncTransportItem);
+            if (vehicleType) vehicleType.addEventListener('input', syncTransportItem);
+
+            // Also trigger sync when the invoice tab is first shown (in case fields are pre‑filled)
+            syncTransportItem();
+
+            // Export PDF (unchanged)
             document.getElementById('exportPdf').addEventListener('click', async () => {
                 const btn = document.getElementById('exportPdf');
                 const originalText = btn.innerHTML;
