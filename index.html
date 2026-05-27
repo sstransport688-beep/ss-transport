@@ -638,34 +638,6 @@
         </div>
     </div>
 
-    <!-- ================= INVOICE PANEL (Transport fields restored, no auto‑sync) ================= -->
-    <div class="panel" id="invoicePanel">
-        <div class="invoice-container">
-            <div class="inv-panel">
-                <div class="inv-section-title">📇 Customer & Invoice Details</div>
-                <div class="inv-form-grid">
-                    <div><label>Company Name (Bill to)</label><input type="text" class="sync-input" data-target="prev-company"></div>
-                    <div><label>Contact Person</label><input type="text" class="sync-input" data-target="prev-contact"></div>
-                    <div><label>Contact Number</label><input type="text" class="sync-input" data-target="prev-phone"></div>
-                    <div><label>Email</label><input type="email" class="sync-input" data-target="prev-email"></div>
-                    <div class="full-width"><label>Address</label><input type="text" class="sync-input" data-target="prev-address"></div>
-                    <div><label>Customer Account</label><input type="text" class="sync-input" data-target="prev-acc"></div>
-                    <div><label>QT No.</label><input type="text" class="sync-input" data-target="prev-qt"></div>
-                    <div><label>Sales Executive</label><input type="text" class="sync-input" data-target="prev-exec"></div>
-                    <div><label>Currency</label><input type="text" class="sync-input" data-target="prev-curr" value="RM"></div>
-                    <div><label>Invoice Date</label><input type="date" class="sync-input date-input" data-target="inv-date" id="input-date"></div>
-                    <div><label>Rev/Page</label><input type="text" class="sync-input" data-target="prev-rev" value="001/1"></div>
-                    <div class="full-width"><label>Sales Order No.</label><input type="text" class="sync-input" data-target="inv-so" id="invSalesOrderNo" value="" placeholder="Auto-generated (editable)"></div>
-                </div>
-
-                <!-- TRANSPORT DETAILS (restored, but no auto‑sync to items) -->
-                <div class="inv-section-title">🚚 Transport Details</div>
-                <div class="inv-form-grid">
-                    <div><label>Location From</label><input type="text" class="sync-input" data-target="prev-loc-from" id="invLocFrom" placeholder="Pick‑up point"></div>
-                    <div><label>Location To</label><input type="text" class="sync-input" data-target="prev-loc-to" id="invLocTo" placeholder="Drop‑off point"></div>
-                    <div><label>Vehicle / Lorry Type</label><input type="text" class="sync-input" data-target="prev-vehicle-type" id="invVehicleType" placeholder="e.g., 14ft Lorry"></div>
-                    <div><label>Driver Name</label><input type="text" class="sync-input" data-target="inv-driver" id="invDriver"></div>
-                </div>
 
                 <div class="inv-section-title">📦 Items Details</div>
                 <div class="table-wrapper">
@@ -848,11 +820,10 @@
         }
 
         // ================== INVOICE GENERATOR PRELOAD DEFAULTS ==================
-        const INVOICE_DEFAULTS = {
-            salesExecutive: 'LCT',
-            driverName: 'LCT',
-            paymentTerm: 'COD/Upon Job Delivered'
-        };
+const INVOICE_DEFAULTS = {
+    salesExecutive: 'LCT',
+    paymentTerm: 'COD/Upon Job Delivered'
+};
 
         // ================== DATA LOADING ==================
         async function loadData(showSpinner = false) {
@@ -1007,32 +978,24 @@
             if (tabName === 'invoice') { prepareNewInvoice(); }
         }
 
-        function prepareNewInvoice() {
-            const invNoField = document.getElementById('invSalesOrderNo');
-            invNoField.value = '';
-            invNoField.readOnly = false;
+function prepareNewInvoice() {
+    const invNoField = document.getElementById('invSalesOrderNo');
+    invNoField.value = '';
+    invNoField.readOnly = false;
 
-            const salesExecField = document.querySelector('[data-target="prev-exec"]');
-            const driverField = document.getElementById('invDriver');
-            const paymentTermField = document.querySelector('[data-target="prev-term"]');
+    const salesExecField = document.querySelector('[data-target="prev-exec"]');
+    const paymentTermField = document.querySelector('[data-target="prev-term"]');
 
-            if (salesExecField) salesExecField.value = INVOICE_DEFAULTS.salesExecutive;
-            if (driverField) driverField.value = INVOICE_DEFAULTS.driverName;
-            if (paymentTermField) paymentTermField.value = INVOICE_DEFAULTS.paymentTerm;
+    if (salesExecField) salesExecField.value = INVOICE_DEFAULTS.salesExecutive;
+    if (paymentTermField) paymentTermField.value = INVOICE_DEFAULTS.paymentTerm;
 
-            // Clear transport fields
-            document.getElementById('invLocFrom').value = '';
-            document.getElementById('invLocTo').value = '';
-            document.getElementById('invVehicleType').value = '';
+    // Clear address (customer location) – no transport fields anymore
+    document.querySelector('[data-target="prev-address"]').value = '';
 
-            invNoField.dispatchEvent(new Event('input'));
-            if (salesExecField) salesExecField.dispatchEvent(new Event('input'));
-            if (driverField) driverField.dispatchEvent(new Event('input'));
-            if (paymentTermField) paymentTermField.dispatchEvent(new Event('input'));
-            document.getElementById('invLocFrom').dispatchEvent(new Event('input'));
-            document.getElementById('invLocTo').dispatchEvent(new Event('input'));
-            document.getElementById('invVehicleType').dispatchEvent(new Event('input'));
-        }
+    invNoField.dispatchEvent(new Event('input'));
+    if (salesExecField) salesExecField.dispatchEvent(new Event('input'));
+    if (paymentTermField) paymentTermField.dispatchEvent(new Event('input'));
+}
 
         function confirmDelete(message, callback) { if (confirm(message)) callback(); }
 
@@ -1154,57 +1117,49 @@
         }
 
         // FIXED: Bridge to Invoice now uses the transport fields, not the address
-        function bridgeToInvoice(id) {
-            const order = salesOrders.find(o => o.id === id);
-            if (!order) return;
+function bridgeToInvoice(id) {
+    const order = salesOrders.find(o => o.id === id);
+    if (!order) return;
 
-            if (!order.orderNumber && order.quotationNumber) {
-                if (confirm('This is a Quotation (not yet confirmed). Would you like to confirm it as a Sales Order first?')) {
-                    confirmQuotation(id);
-                }
-            }
-
-            switchTab('invoice');
-
-            if (!order.invoiceNumber) {
-                order.invoiceNumber = generateInvoiceNumber();
-                saveData();
-            }
-
-            const soInput = document.getElementById('invSalesOrderNo');
-            soInput.value = order.invoiceNumber || order.orderNumber || order.quotationNumber || '';
-
-            document.querySelector('[data-target="prev-company"]').value = order.clientSender || '';
-            document.querySelector('[data-target="inv-date"]').value = order.date || '';
-
-            // Fill transport fields correctly
-            document.getElementById('invLocFrom').value = order.destFrom || '';
-            document.getElementById('invLocTo').value = order.destTo || '';
-            document.getElementById('invVehicleType').value = order.vehicle || '';
-
-            const qtInput = document.querySelector('[data-target="prev-qt"]');
-            if (qtInput && order.quotationNumber) {
-                qtInput.value = order.quotationNumber;
-            }
-
-            soInput.dispatchEvent(new Event('input'));
-            document.getElementById('invLocFrom').dispatchEvent(new Event('input'));
-            document.getElementById('invLocTo').dispatchEvent(new Event('input'));
-            document.getElementById('invVehicleType').dispatchEvent(new Event('input'));
-            document.getElementById('invDriver').dispatchEvent(new Event('input'));
-            if (qtInput) qtInput.dispatchEvent(new Event('input'));
-
-            // Still add a default item row describing the transport, but user can delete/modify
-            document.getElementById('itemsBody').innerHTML = '';
-            addInvoiceItem(`Transport: ${order.destFrom} to ${order.destTo} (${order.vehicle})`, order.gross, 1);
-
-            order.invoiced = true;
-            saveData();
-            renderSalesOrders();
-
-            alert('Sales Order data loaded into Invoice Generator!\nInvoice No: ' + order.invoiceNumber);
+    if (!order.orderNumber && order.quotationNumber) {
+        if (confirm('This is a Quotation (not yet confirmed). Would you like to confirm it as a Sales Order first?')) {
+            confirmQuotation(id);
         }
+    }
 
+    switchTab('invoice');
+
+    if (!order.invoiceNumber) {
+        order.invoiceNumber = generateInvoiceNumber();
+        saveData();
+    }
+
+    const soInput = document.getElementById('invSalesOrderNo');
+    soInput.value = order.invoiceNumber || order.orderNumber || order.quotationNumber || '';
+    soInput.readOnly = !!order.orderNumber;
+
+    document.querySelector('[data-target="prev-company"]').value = order.clientSender || '';
+    document.querySelector('[data-target="inv-date"]').value = order.date || '';
+    document.querySelector('[data-target="prev-address"]').value = order.destFrom || '';
+
+    const qtInput = document.querySelector('[data-target="prev-qt"]');
+    if (qtInput && order.quotationNumber) {
+        qtInput.value = order.quotationNumber;
+    }
+
+    soInput.dispatchEvent(new Event('input'));
+    document.querySelector('[data-target="inv-date"]').dispatchEvent(new Event('input'));
+    if (qtInput) qtInput.dispatchEvent(new Event('input'));
+
+    document.getElementById('itemsBody').innerHTML = '';
+    addInvoiceItem(`Transport: ${order.destFrom} to ${order.destTo} (${order.vehicle})`, order.gross, 1);
+
+    order.invoiced = true;
+    saveData();
+    renderSalesOrders();
+
+    alert('Sales Order data loaded into Invoice Generator!\nInvoice No: ' + order.invoiceNumber);
+}
         function confirmQuotation(id) {
             const order = salesOrders.find(o => o.id === id);
             if (!order || !order.quotationNumber) return;
@@ -1218,42 +1173,35 @@
 
         // FIXED: alertIconClick now fills the correct transport fields
         function alertIconClick(id) {
-            const order = salesOrders.find(o => o.id === id);
-            if (!order) return;
+    const order = salesOrders.find(o => o.id === id);
+    if (!order) return;
 
-            const statusMsg = order.invoiced
-                ? '✅ Status: Invoiced\n\nThis sales order has been invoiced successfully.\n\nThe invoice has been generated and the order is marked as complete.'
-                : '⚠️ Status: Not Invoiced\n\nThis sales order has not yet been invoiced.\n\nPlease generate an invoice for this order to update its status to "Invoiced" (✅).';
+    const statusMsg = order.invoiced
+        ? '✅ Status: Invoiced\n\nThis sales order has been invoiced successfully.'
+        : '⚠️ Status: Not Invoiced\n\nThis sales order has not yet been invoiced.\n\nPlease generate an invoice for this order to update its status to "Invoiced" (✅).';
 
-            alert(statusMsg + '\n\nCustomer: ' + (order.clientSender || 'N/A') +
-                  '\nOrder No: ' + (order.orderNumber || 'N/A') +
-                  '\nRoute: ' + (order.destFrom || 'N/A') + ' to ' + (order.destTo || 'N/A') +
-                  '\nVehicle: ' + (order.vehicle || 'N/A'));
+    alert(statusMsg + '\n\nCustomer: ' + (order.clientSender || 'N/A') +
+          '\nOrder No: ' + (order.orderNumber || 'N/A') +
+          '\nRoute: ' + (order.destFrom || 'N/A') + ' to ' + (order.destTo || 'N/A') +
+          '\nVehicle: ' + (order.vehicle || 'N/A'));
 
-            switchTab('invoice');
+    switchTab('invoice');
 
-            const soInput = document.getElementById('invSalesOrderNo');
-            soInput.value = order.orderNumber || order.quotationNumber || '';
-            soInput.readOnly = !!order.orderNumber;
+    const soInput = document.getElementById('invSalesOrderNo');
+    soInput.value = order.orderNumber || order.quotationNumber || '';
+    soInput.readOnly = !!order.orderNumber;
 
-            document.querySelector('[data-target="prev-company"]').value = order.clientSender || '';
-            document.querySelector('[data-target="inv-date"]').value = order.date || '';
+    document.querySelector('[data-target="prev-company"]').value = order.clientSender || '';
+    document.querySelector('[data-target="inv-date"]').value = order.date || '';
+    document.querySelector('[data-target="prev-address"]').value = order.destFrom || '';
 
-            document.getElementById('invLocFrom').value = order.destFrom || '';
-            document.getElementById('invLocTo').value = order.destTo || '';
-            document.getElementById('invVehicleType').value = order.vehicle || '';
+    document.getElementById('itemsBody').innerHTML = '';
+    addInvoiceItem(`Transport: ${order.destFrom} to ${order.destTo} (${order.vehicle})`, order.gross, 1);
 
-            document.getElementById('itemsBody').innerHTML = '';
-            addInvoiceItem(`Transport: ${order.destFrom} to ${order.destTo} (${order.vehicle})`, order.gross, 1);
-
-            document.querySelector('[data-target="prev-company"]').dispatchEvent(new Event('input'));
-            soInput.dispatchEvent(new Event('input'));
-            document.querySelector('[data-target="inv-date"]').dispatchEvent(new Event('input'));
-            document.getElementById('invLocFrom').dispatchEvent(new Event('input'));
-            document.getElementById('invLocTo').dispatchEvent(new Event('input'));
-            document.getElementById('invVehicleType').dispatchEvent(new Event('input'));
-        }
-
+    document.querySelector('[data-target="prev-company"]').dispatchEvent(new Event('input'));
+    soInput.dispatchEvent(new Event('input'));
+    document.querySelector('[data-target="inv-date"]').dispatchEvent(new Event('input'));
+}
         async function addOrUpdateSalesOrder() {
             if (!validateSalesOrder()) return;
             const dateDisplay = document.getElementById('soDate').value;
@@ -2066,9 +2014,9 @@
                     if (shouldCreateSalesOrder) {
                         const dateValue = document.querySelector('[data-target="inv-date"]').value || new Date().toISOString().split('T')[0];
                         // Use transport fields for destination
-                        const destFrom = document.getElementById('invLocFrom').value || '';
-                        const destTo = document.getElementById('invLocTo').value || '';
-                        const vehicle = document.getElementById('invVehicleType').value || '';
+                        const destFrom = document.querySelector('[data-target="prev-address"]').value || '';
+                        const destTo = '';   // no transport fields – manually edit later
+                        const vehicle = '';  // no transport fields – manually edit later
 
                         let gross = 0;
                         const rows = itemsBody.querySelectorAll('tr');
