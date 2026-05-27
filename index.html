@@ -15,8 +15,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
-        /* … (all your original CSS, unchanged) … */
-        /* I'm including the full CSS for completeness, but it's identical to your original */
         body { font-family: Arial, sans-serif; margin: auto; padding: 20px; box-sizing: border-box; }
         body.max-width-constrained { max-width: 1100px; }
         h1 { margin-bottom: 5px; }
@@ -83,7 +81,7 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .loading-text { margin-top: 15px; font-size: 18px; color: #333; }
 
-/* ================= INVOICE GENERATOR STYLES (NEW LAYOUT) ================= */
+/* ================= INVOICE GENERATOR STYLES ================= */
     :root {
       --inv-bg: #eef2f6;
       --inv-card: #ffffff;
@@ -240,7 +238,6 @@
     .btn-inv-export:hover { background: #a93226; }
     .btn-inv-export.loading { opacity: 0.6; pointer-events: none; }
 
-    /* Preview Panel */
     .preview-panel {
       position: relative;
       top: 0;
@@ -442,26 +439,25 @@
       border-bottom: 2px solid var(--inv-bg);
     }
 
-
-        @media (max-width: 600px) {
-            body { padding: 10px; }
-            .form-row { flex-direction: column; height: auto; align-items: stretch; margin-bottom: 12px; }
-            .form-row label { width: 100%; text-align: left; margin-right: 0; line-height: normal; margin-bottom: 4px; }
-            .form-row .input-container { height: 40px; width: 100%; }
-            .btn-group { padding-left: 0; justify-content: center; }
-            .btn-primary, .btn-secondary, .btn-export, .btn-clear, .btn-delete-selected { width: 100%; text-align: center; }
-            .tabs { flex-direction: column; }
-            .tab { border-radius: 5px; width: 100%; text-align: center; }
-            .filter-row, .import-row { flex-direction: column; align-items: stretch; gap: 6px; }
-            .filter-row label, .import-row label { width: 100%; text-align: left; margin-right: 0; }
-            .filter-row input[type="text"], .filter-row .flatpickr-input, .filter-row select, .filter-row input[type="file"], .import-row input[type="file"] { width: 100%; }
-            .table-wrapper { max-height: 450px; overflow-y: auto; border: 1px solid #ccc; }
-            table { min-width: 100%; }
-            th, td { white-space: normal; font-size: 0.9em; }
-            .invoice-grid { grid-template-columns: 1fr; }
-            .inv-form-grid { grid-template-columns: 1fr !important; }
-            .signatory-section { flex-direction: column; gap: 20px; align-items: center;}
-        }
+    @media (max-width: 600px) {
+      body { padding: 10px; }
+      .form-row { flex-direction: column; height: auto; align-items: stretch; margin-bottom: 12px; }
+      .form-row label { width: 100%; text-align: left; margin-right: 0; line-height: normal; margin-bottom: 4px; }
+      .form-row .input-container { height: 40px; width: 100%; }
+      .btn-group { padding-left: 0; justify-content: center; }
+      .btn-primary, .btn-secondary, .btn-export, .btn-clear, .btn-delete-selected { width: 100%; text-align: center; }
+      .tabs { flex-direction: column; }
+      .tab { border-radius: 5px; width: 100%; text-align: center; }
+      .filter-row, .import-row { flex-direction: column; align-items: stretch; gap: 6px; }
+      .filter-row label, .import-row label { width: 100%; text-align: left; margin-right: 0; }
+      .filter-row input[type="text"], .filter-row .flatpickr-input, .filter-row select, .filter-row input[type="file"], .import-row input[type="file"] { width: 100%; }
+      .table-wrapper { max-height: 450px; overflow-y: auto; border: 1px solid #ccc; }
+      table { min-width: 100%; }
+      th, td { white-space: normal; font-size: 0.9em; }
+      .invoice-grid { grid-template-columns: 1fr; }
+      .inv-form-grid { grid-template-columns: 1fr !important; }
+      .signatory-section { flex-direction: column; gap: 20px; align-items: center;}
+    }
     </style>
 </head>
 <body>
@@ -638,6 +634,25 @@
         </div>
     </div>
 
+    <!-- INVOICE PANEL (Final) -->
+    <div class="panel" id="invoicePanel">
+        <div class="invoice-container">
+            <div class="inv-panel">
+                <div class="inv-section-title">📇 Customer & Invoice Details</div>
+                <div class="inv-form-grid">
+                    <div><label>Company Name (Bill to)</label><input type="text" class="sync-input" data-target="prev-company"></div>
+                    <div><label>Contact Person</label><input type="text" class="sync-input" data-target="prev-contact"></div>
+                    <div><label>Contact Number</label><input type="text" class="sync-input" data-target="prev-phone"></div>
+                    <div><label>Email</label><input type="email" class="sync-input" data-target="prev-email"></div>
+                    <div class="full-width"><label>Address</label><input type="text" class="sync-input" data-target="prev-address"></div>
+                    <div><label>Customer Account</label><input type="text" class="sync-input" data-target="prev-acc"></div>
+                    <div><label>QT No.</label><input type="text" class="sync-input" data-target="prev-qt"></div>
+                    <div><label>Sales Executive</label><input type="text" class="sync-input" data-target="prev-exec"></div>
+                    <div><label>Currency</label><input type="text" class="sync-input" data-target="prev-curr" value="RM"></div>
+                    <div><label>Invoice Date</label><input type="date" class="sync-input date-input" data-target="inv-date" id="input-date"></div>
+                    <div><label>Rev/Page</label><input type="text" class="sync-input" data-target="prev-rev" value="001/1"></div>
+                    <div class="full-width"><label>Sales Order No.</label><input type="text" class="sync-input" data-target="inv-so" id="invSalesOrderNo" value="" placeholder="Auto-generated (editable)"></div>
+                </div>
 
                 <div class="inv-section-title">📦 Items Details</div>
                 <div class="table-wrapper">
@@ -645,7 +660,8 @@
                         <thead>
                             <tr style="background:#f1f5f9; text-align:left;">
                                 <th style="padding:6px; border:1px solid var(--inv-border); font-size:0.75rem;">Date Delivered</th>
-                                <th style="padding:6px; border:1px solid var(--inv-border); font-size:0.75rem;">Description</th>
+                                <th style="padding:6px; border:1px solid var(--inv-border); font-size:0.75rem;">From</th>
+                                <th style="padding:6px; border:1px solid var(--inv-border); font-size:0.75rem;">To</th>
                                 <th style="padding:6px; border:1px solid var(--inv-border); font-size:0.75rem;">UOM</th>
                                 <th style="padding:6px; border:1px solid var(--inv-border); font-size:0.75rem;">Price</th>
                                 <th style="padding:6px; border:1px solid var(--inv-border); font-size:0.75rem;">QTY</th>
@@ -670,6 +686,7 @@
                     <div><label>Name</label><input type="text" class="sync-input" data-target="prev-sigName" value="Leong Chun Tuck"></div>
                     <div><label>TIN No.</label><input type="text" class="sync-input" data-target="prev-tin" value="IG10434308070"></div>
                     <div class="full-width"><label>Contact</label><input type="text" class="sync-input" data-target="prev-sigContact" value="0122336290"></div>
+                    <div><label>Driver</label><input type="text" class="sync-input" data-target="prev-driver" id="invDriver" value="LCT"></div>
                 </div>
 
                 <button class="btn-inv btn-inv-export" id="exportPdf">📄 Export PDF</button>
@@ -707,18 +724,13 @@
                         <strong>Address:</strong> <span id="prev-address">-</span>
                     </div>
 
-                    <!-- TRANSPORT LINE RESTORED -->
-                    <div class="bill-to" style="background: #e8f4fd; border-left-color: #1a3a5c; margin-top: 10px;">
-                        🚚 Transport: <span id="prev-loc-from">-</span> to <span id="prev-loc-to">-</span> (<span id="prev-vehicle-type">-</span>) | Driver: <span id="inv-driver">-</span>
-                    </div>
-
                     <div class="table-wrapper">
                         <table class="inv-items-table">
                             <thead>
-                                <tr><th>Date</th><th>Description</th><th>UOM</th><th>Price</th><th>QTY</th><th>Total</th></tr>
+                                <tr><th>Date</th><th>From</th><th>To</th><th>UOM</th><th>Price</th><th>QTY</th><th>Total</th></tr>
                             </thead>
                             <tbody id="prev-items">
-                                <tr><td colspan="6" class="empty">No items added yet</td></tr>
+                                <tr><td colspan="7" class="empty">No items added yet</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -737,7 +749,8 @@
                             <strong>Authorised Signatory</strong><br>
                             Name: <span id="prev-sigName">Leong Chun Tuck</span><br>
                             TIN: <span id="prev-tin">IG10434308070</span><br>
-                            Tel: <span id="prev-sigContact">0122336290</span>
+                            Tel: <span id="prev-sigContact">0122336290</span><br>
+                            Driver: <span id="prev-driver">LCT</span>
                         </div>
                         <div class="signatory-right">
                             <img id="prev-chop" src="stamp.png" alt="Company Chop" style="display:block; max-width: 150px;">
@@ -751,7 +764,6 @@
     </div>
 
     <script>
-        // ⚠️ EXACT API URL AS PROVIDED IN YOUR ORIGINAL CODE
         const API_URL = 'https://script.google.com/macros/s/AKfycbwtCfdJGsUsQ4PKWuLWxB6W7EF9J94YDrgCa8yO7w-MqqNOBVc7fUQrheFGTR94Fr0Sbw/exec';
 
         const STANDARD_VEHICLES = ['10ft Lorry', '14ft Lorry', '17ft Lorry'];
@@ -819,11 +831,11 @@
             return prefix + String(nextNum).padStart(4,'0') + year;
         }
 
-        // ================== INVOICE GENERATOR PRELOAD DEFAULTS ==================
-const INVOICE_DEFAULTS = {
-    salesExecutive: 'LCT',
-    paymentTerm: 'COD/Upon Job Delivered'
-};
+        // ================== INVOICE DEFAULTS ==================
+        const INVOICE_DEFAULTS = {
+            salesExecutive: 'LCT',
+            paymentTerm: 'COD/Upon Job Delivered'
+        };
 
         // ================== DATA LOADING ==================
         async function loadData(showSpinner = false) {
@@ -978,24 +990,21 @@ const INVOICE_DEFAULTS = {
             if (tabName === 'invoice') { prepareNewInvoice(); }
         }
 
-function prepareNewInvoice() {
-    const invNoField = document.getElementById('invSalesOrderNo');
-    invNoField.value = '';
-    invNoField.readOnly = false;
+        function prepareNewInvoice() {
+            const invNoField = document.getElementById('invSalesOrderNo');
+            invNoField.value = '';
+            invNoField.readOnly = false;
 
-    const salesExecField = document.querySelector('[data-target="prev-exec"]');
-    const paymentTermField = document.querySelector('[data-target="prev-term"]');
+            const salesExecField = document.querySelector('[data-target="prev-exec"]');
+            const paymentTermField = document.querySelector('[data-target="prev-term"]');
 
-    if (salesExecField) salesExecField.value = INVOICE_DEFAULTS.salesExecutive;
-    if (paymentTermField) paymentTermField.value = INVOICE_DEFAULTS.paymentTerm;
+            if (salesExecField) salesExecField.value = INVOICE_DEFAULTS.salesExecutive;
+            if (paymentTermField) paymentTermField.value = INVOICE_DEFAULTS.paymentTerm;
 
-    // Clear address (customer location) – no transport fields anymore
-    document.querySelector('[data-target="prev-address"]').value = '';
-
-    invNoField.dispatchEvent(new Event('input'));
-    if (salesExecField) salesExecField.dispatchEvent(new Event('input'));
-    if (paymentTermField) paymentTermField.dispatchEvent(new Event('input'));
-}
+            invNoField.dispatchEvent(new Event('input'));
+            if (salesExecField) salesExecField.dispatchEvent(new Event('input'));
+            if (paymentTermField) paymentTermField.dispatchEvent(new Event('input'));
+        }
 
         function confirmDelete(message, callback) { if (confirm(message)) callback(); }
 
@@ -1116,50 +1125,52 @@ function prepareNewInvoice() {
             setSalesEditingMode(id);
         }
 
-        // FIXED: Bridge to Invoice now uses the transport fields, not the address
-function bridgeToInvoice(id) {
-    const order = salesOrders.find(o => o.id === id);
-    if (!order) return;
+        // Bridge to Invoice (updated for From/To fields)
+        function bridgeToInvoice(id) {
+            const order = salesOrders.find(o => o.id === id);
+            if (!order) return;
 
-    if (!order.orderNumber && order.quotationNumber) {
-        if (confirm('This is a Quotation (not yet confirmed). Would you like to confirm it as a Sales Order first?')) {
-            confirmQuotation(id);
+            if (!order.orderNumber && order.quotationNumber) {
+                if (confirm('This is a Quotation (not yet confirmed). Would you like to confirm it as a Sales Order first?')) {
+                    confirmQuotation(id);
+                }
+            }
+
+            switchTab('invoice');
+
+            if (!order.invoiceNumber) {
+                order.invoiceNumber = generateInvoiceNumber();
+                saveData();
+            }
+
+            const soInput = document.getElementById('invSalesOrderNo');
+            soInput.value = order.invoiceNumber || order.orderNumber || order.quotationNumber || '';
+            soInput.readOnly = !!order.orderNumber;
+
+            document.querySelector('[data-target="prev-company"]').value = order.clientSender || '';
+            document.querySelector('[data-target="inv-date"]').value = order.date || '';
+            document.querySelector('[data-target="prev-address"]').value = order.destFrom || '';
+
+            const qtInput = document.querySelector('[data-target="prev-qt"]');
+            if (qtInput && order.quotationNumber) {
+                qtInput.value = order.quotationNumber;
+            }
+
+            soInput.dispatchEvent(new Event('input'));
+            document.querySelector('[data-target="inv-date"]').dispatchEvent(new Event('input'));
+            if (qtInput) qtInput.dispatchEvent(new Event('input'));
+
+            // Add item row using new addInvoiceItem signature (from, to, price, qty)
+            document.getElementById('itemsBody').innerHTML = '';
+            addInvoiceItem(order.destFrom || '', order.destTo || '', order.gross, 1);
+
+            order.invoiced = true;
+            saveData();
+            renderSalesOrders();
+
+            alert('Sales Order data loaded into Invoice Generator!\nInvoice No: ' + order.invoiceNumber);
         }
-    }
 
-    switchTab('invoice');
-
-    if (!order.invoiceNumber) {
-        order.invoiceNumber = generateInvoiceNumber();
-        saveData();
-    }
-
-    const soInput = document.getElementById('invSalesOrderNo');
-    soInput.value = order.invoiceNumber || order.orderNumber || order.quotationNumber || '';
-    soInput.readOnly = !!order.orderNumber;
-
-    document.querySelector('[data-target="prev-company"]').value = order.clientSender || '';
-    document.querySelector('[data-target="inv-date"]').value = order.date || '';
-    document.querySelector('[data-target="prev-address"]').value = order.destFrom || '';
-
-    const qtInput = document.querySelector('[data-target="prev-qt"]');
-    if (qtInput && order.quotationNumber) {
-        qtInput.value = order.quotationNumber;
-    }
-
-    soInput.dispatchEvent(new Event('input'));
-    document.querySelector('[data-target="inv-date"]').dispatchEvent(new Event('input'));
-    if (qtInput) qtInput.dispatchEvent(new Event('input'));
-
-    document.getElementById('itemsBody').innerHTML = '';
-    addInvoiceItem(`Transport: ${order.destFrom} to ${order.destTo} (${order.vehicle})`, order.gross, 1);
-
-    order.invoiced = true;
-    saveData();
-    renderSalesOrders();
-
-    alert('Sales Order data loaded into Invoice Generator!\nInvoice No: ' + order.invoiceNumber);
-}
         function confirmQuotation(id) {
             const order = salesOrders.find(o => o.id === id);
             if (!order || !order.quotationNumber) return;
@@ -1171,37 +1182,37 @@ function bridgeToInvoice(id) {
             alert('Quotation ' + order.quotationNumber + ' has been confirmed as Sales Order ' + order.orderNumber);
         }
 
-        // FIXED: alertIconClick now fills the correct transport fields
         function alertIconClick(id) {
-    const order = salesOrders.find(o => o.id === id);
-    if (!order) return;
+            const order = salesOrders.find(o => o.id === id);
+            if (!order) return;
 
-    const statusMsg = order.invoiced
-        ? '✅ Status: Invoiced\n\nThis sales order has been invoiced successfully.'
-        : '⚠️ Status: Not Invoiced\n\nThis sales order has not yet been invoiced.\n\nPlease generate an invoice for this order to update its status to "Invoiced" (✅).';
+            const statusMsg = order.invoiced
+                ? '✅ Status: Invoiced\n\nThis sales order has been invoiced successfully.'
+                : '⚠️ Status: Not Invoiced\n\nThis sales order has not yet been invoiced.';
 
-    alert(statusMsg + '\n\nCustomer: ' + (order.clientSender || 'N/A') +
-          '\nOrder No: ' + (order.orderNumber || 'N/A') +
-          '\nRoute: ' + (order.destFrom || 'N/A') + ' to ' + (order.destTo || 'N/A') +
-          '\nVehicle: ' + (order.vehicle || 'N/A'));
+            alert(statusMsg + '\n\nCustomer: ' + (order.clientSender || 'N/A') +
+                  '\nOrder No: ' + (order.orderNumber || 'N/A') +
+                  '\nRoute: ' + (order.destFrom || 'N/A') + ' to ' + (order.destTo || 'N/A') +
+                  '\nVehicle: ' + (order.vehicle || 'N/A'));
 
-    switchTab('invoice');
+            switchTab('invoice');
 
-    const soInput = document.getElementById('invSalesOrderNo');
-    soInput.value = order.orderNumber || order.quotationNumber || '';
-    soInput.readOnly = !!order.orderNumber;
+            const soInput = document.getElementById('invSalesOrderNo');
+            soInput.value = order.orderNumber || order.quotationNumber || '';
+            soInput.readOnly = !!order.orderNumber;
 
-    document.querySelector('[data-target="prev-company"]').value = order.clientSender || '';
-    document.querySelector('[data-target="inv-date"]').value = order.date || '';
-    document.querySelector('[data-target="prev-address"]').value = order.destFrom || '';
+            document.querySelector('[data-target="prev-company"]').value = order.clientSender || '';
+            document.querySelector('[data-target="inv-date"]').value = order.date || '';
+            document.querySelector('[data-target="prev-address"]').value = order.destFrom || '';
 
-    document.getElementById('itemsBody').innerHTML = '';
-    addInvoiceItem(`Transport: ${order.destFrom} to ${order.destTo} (${order.vehicle})`, order.gross, 1);
+            document.getElementById('itemsBody').innerHTML = '';
+            addInvoiceItem(order.destFrom || '', order.destTo || '', order.gross, 1);
 
-    document.querySelector('[data-target="prev-company"]').dispatchEvent(new Event('input'));
-    soInput.dispatchEvent(new Event('input'));
-    document.querySelector('[data-target="inv-date"]').dispatchEvent(new Event('input'));
-}
+            document.querySelector('[data-target="prev-company"]').dispatchEvent(new Event('input'));
+            soInput.dispatchEvent(new Event('input'));
+            document.querySelector('[data-target="inv-date"]').dispatchEvent(new Event('input'));
+        }
+
         async function addOrUpdateSalesOrder() {
             if (!validateSalesOrder()) return;
             const dateDisplay = document.getElementById('soDate').value;
@@ -1837,7 +1848,7 @@ function bridgeToInvoice(id) {
         async function refreshData() { await loadData(true); alert('Data refreshed!'); }
         setInterval(async () => { try { if (!editingSalesId && !editingExpenseId) await loadData(false); } catch(e) {} }, 10000);
 
-        // ================== INVOICE SPECIFIC LOGIC (Transport fields present, NO auto‑sync) ==================
+        // ================== INVOICE SPECIFIC LOGIC (FINAL) ==================
         function setupInvoiceSync() {
             // Sync text inputs with preview
             document.querySelectorAll('.sync-input').forEach(input => {
@@ -1882,12 +1893,12 @@ function bridgeToInvoice(id) {
             const itemsBody = document.getElementById('itemsBody');
             const prevItems = document.getElementById('prev-items');
 
-            // Preview updater
+            // Preview updater (now handles From/To columns)
             const updatePreviewTable = () => {
                 prevItems.innerHTML = '';
                 const rows = itemsBody.querySelectorAll('tr');
                 if (rows.length === 0) {
-                    prevItems.innerHTML = '<tr><td colspan="6" class="empty">No items added yet</td></tr>';
+                    prevItems.innerHTML = '<tr><td colspan="7" class="empty">No items added yet</td></tr>';
                     document.getElementById('grand-total').textContent = '0.00';
                     return;
                 }
@@ -1895,17 +1906,19 @@ function bridgeToInvoice(id) {
                 rows.forEach(row => {
                     const dateInput = row.querySelector('.item-date')?.value || '';
                     const date = formatDateDDMMYYYY(dateInput);
-                    const desc = row.querySelector('.item-desc')?.value || '';
-                    const uom = row.querySelector('.item-uom')?.value || '';
+                    const from = row.querySelector('.item-from')?.value || '';
+                    const to   = row.querySelector('.item-to')?.value || '';
+                    const uom  = row.querySelector('.item-uom')?.value || '';
                     const price = parseFloat(row.querySelector('.item-price')?.value) || 0;
-                    const qty = parseFloat(row.querySelector('.item-qty')?.value) || 0;
+                    const qty   = parseFloat(row.querySelector('.item-qty')?.value) || 0;
                     const total = price * qty;
                     grandTotal += total;
 
                     const prevRow = document.createElement('tr');
                     prevRow.innerHTML = `
                         <td class="date-display">${date}</td>
-                        <td>${desc}</td>
+                        <td>${from}</td>
+                        <td>${to}</td>
                         <td>${uom}</td>
                         <td>${price.toFixed(2)}</td>
                         <td>${qty}</td>
@@ -1937,34 +1950,39 @@ function bridgeToInvoice(id) {
                         <input type="date" class="item-date date-input" style="border:none; width:100%; font-size:0.75rem;">
                     </td>
                     <td style="border:1px solid var(--inv-border); padding:4px;">
-                        <input type="text" class="item-desc" style="border:none; width:100%; font-size:0.75rem;">
+                        <input type="text" class="item-from" style="border:none; width:100%; font-size:0.75rem;" placeholder="From">
                     </td>
                     <td style="border:1px solid var(--inv-border); padding:4px;">
-                        <input type="text" class="item-uom" style="border:none; width:100%; font-size:0.75rem;">
+                        <input type="text" class="item-to" style="border:none; width:100%; font-size:0.75rem;" placeholder="To">
                     </td>
                     <td style="border:1px solid var(--inv-border); padding:4px;">
-                        <input type="number" class="item-price" style="border:none; width:100%; font-size:0.75rem;">
+                        <input type="text" class="item-uom" style="border:none; width:100%; font-size:0.75rem;" value="LOT">
                     </td>
                     <td style="border:1px solid var(--inv-border); padding:4px;">
-                        <input type="number" class="item-qty" style="border:none; width:100%; font-size:0.75rem;">
+                        <input type="number" class="item-price" style="border:none; width:100%; font-size:0.75rem;" placeholder="0.00">
+                    </td>
+                    <td style="border:1px solid var(--inv-border); padding:4px;">
+                        <input type="number" class="item-qty" style="border:none; width:100%; font-size:0.75rem;" value="1">
                     </td>
                     <td style="border:1px solid var(--inv-border); padding:4px; text-align:center;">
                         <button class="btn-inv-remove remove-row">✕</button>
                     </td>`;
                 itemsBody.appendChild(tr);
                 updatePreviewTable();
-                // NO auto‑sync from transport fields
             });
 
-            // Global helper for bridging from sales orders
-            window.addInvoiceItem = (description, price, qty) => {
+            // Global helper (updated signature)
+            window.addInvoiceItem = (from, to, price, qty) => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td style="border:1px solid var(--inv-border); padding:4px;">
                         <input type="date" class="item-date date-input" style="border:none; width:100%; font-size:0.75rem;">
                     </td>
                     <td style="border:1px solid var(--inv-border); padding:4px;">
-                        <input type="text" class="item-desc" style="border:none; width:100%; font-size:0.75rem;" value="${description}">
+                        <input type="text" class="item-from" style="border:none; width:100%; font-size:0.75rem;" value="${from}">
+                    </td>
+                    <td style="border:1px solid var(--inv-border); padding:4px;">
+                        <input type="text" class="item-to" style="border:none; width:100%; font-size:0.75rem;" value="${to}">
                     </td>
                     <td style="border:1px solid var(--inv-border); padding:4px;">
                         <input type="text" class="item-uom" style="border:none; width:100%; font-size:0.75rem;" value="LOT">
@@ -1982,7 +2000,7 @@ function bridgeToInvoice(id) {
                 updatePreviewTable();
             };
 
-            // Export PDF (now reads transport fields for sales order creation)
+            // Export PDF (adjusted for new fields)
             document.getElementById('exportPdf').addEventListener('click', async () => {
                 const btn = document.getElementById('exportPdf');
                 const originalText = btn.innerHTML;
@@ -2013,10 +2031,9 @@ function bridgeToInvoice(id) {
 
                     if (shouldCreateSalesOrder) {
                         const dateValue = document.querySelector('[data-target="inv-date"]').value || new Date().toISOString().split('T')[0];
-                        // Use transport fields for destination
                         const destFrom = document.querySelector('[data-target="prev-address"]').value || '';
-                        const destTo = '';   // no transport fields – manually edit later
-                        const vehicle = '';  // no transport fields – manually edit later
+                        const destTo = '';
+                        const vehicle = '';
 
                         let gross = 0;
                         const rows = itemsBody.querySelectorAll('tr');
