@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -637,8 +636,6 @@
     <div class="panel" id="invoicePanel">
         <div class="invoice-container">
             <div class="inv-panel">
-                <!-- Logo and Stamp are now hardcoded from repository files -->
-
                 <div class="inv-section-title">📇 Customer & Invoice Details</div>
                 <div class="inv-form-grid">
                     <div><label>Company Name (Bill to)</label><input type="text" class="sync-input" data-target="prev-company"></div>
@@ -841,7 +838,6 @@
         }
 
         // ================== INVOICE GENERATOR PRELOAD DEFAULTS ==================
-        // These are the default values that get preloaded when creating a new invoice
         const INVOICE_DEFAULTS = {
             salesExecutive: 'LCT',
             driverName: 'LCT',
@@ -860,7 +856,6 @@
                 const salesData = await salesRes.json();
                 const expData = await expRes.json();
 
-                // Prevent crash if CustomVehicles sheet doesn't exist yet
                 let customData = [];
                 try { customData = await customRes.json(); } catch(e) {}
 
@@ -883,7 +878,7 @@
                     gross: parseFloat(row['Gross (RM)']) || 0,
                     billing: row['Billing'] === 'Yes',
                     paid: row['Paid'] === 'Yes',
-                    invoiced: row['Paid'] === 'Yes' // Auto-set invoiced if paid
+                    invoiced: row['Paid'] === 'Yes'
                 }));
 
                 expenses = expData.map(row => ({
@@ -985,11 +980,9 @@
             document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
             document.getElementById(tabName+'Panel').classList.add('active');
 
-            // To handle calls from code (like bridgeToInvoice)
             if (event && event.target) {
                 event.target.classList.add('active');
             } else {
-                // Find and highlight the correct button if called via code
                 const buttons = document.querySelectorAll('.tab');
                 for (let btn of buttons) {
                     if (btn.getAttribute('onclick') === `switchTab('${tabName}')`) {
@@ -1004,24 +997,19 @@
             if (tabName === 'invoice') { prepareNewInvoice(); }
         }
 
-        // Prepare form for a new invoice (Set defaults for Sales Executive, Driver, Payment Term)
         function prepareNewInvoice() {
-            // Clear Sales Order No field - user will input manually or it will be filled from sales order
             const invNoField = document.getElementById('invSalesOrderNo');
             invNoField.value = '';
-            invNoField.readOnly = false; // Allow editing
+            invNoField.readOnly = false;
 
-            // Set Default Values - Preload like Payment Details section
             const salesExecField = document.querySelector('[data-target="prev-exec"]');
             const driverField = document.getElementById('invDriver');
             const paymentTermField = document.querySelector('[data-target="prev-term"]');
 
-            // Preload default values (Sales Executive: LCT, Driver: LCT, Payment Term: COD/Upon Job Delivered)
             if (salesExecField) salesExecField.value = INVOICE_DEFAULTS.salesExecutive;
             if (driverField) driverField.value = INVOICE_DEFAULTS.driverName;
             if (paymentTermField) paymentTermField.value = INVOICE_DEFAULTS.paymentTerm;
 
-            // Trigger input events to sync preview with default values
             invNoField.dispatchEvent(new Event('input'));
             if (salesExecField) salesExecField.dispatchEvent(new Event('input'));
             if (driverField) driverField.dispatchEvent(new Event('input'));
@@ -1158,7 +1146,6 @@
             document.getElementById('soPaid').checked = order.paid || false;
             buildVehicleOptions(order.vehicle);
 
-            // Show quotation number if exists (unconfirmed sales)
             if (order.quotationNumber) {
                 document.getElementById('quotationNoRow').style.display = 'flex';
                 document.getElementById('soQuotationNo').value = order.quotationNumber;
@@ -1167,7 +1154,6 @@
                 document.getElementById('soQuotationNo').value = '';
             }
 
-            // Show order number if exists (confirmed sales)
             if (order.orderNumber) {
                 document.getElementById('orderNoRow').style.display = 'flex';
                 document.getElementById('soOrderNo').value = order.orderNumber;
@@ -1184,7 +1170,6 @@
             } else {
                 dateInput.value = '';
             }
-
             document.getElementById('soClientSender').value = '';
             document.getElementById('soDestFrom').value = '';
             document.getElementById('soDestTo').value = '';
@@ -1220,61 +1205,48 @@
             setSalesEditingMode(id);
         }
 
-        // Bridge function to transfer Sales Order data to Invoice Generator
         function bridgeToInvoice(id) {
             const order = salesOrders.find(o => o.id === id);
             if (!order) return;
 
-            // If this is a quotation (not yet confirmed), ask to confirm first
             if (!order.orderNumber && order.quotationNumber) {
                 if (confirm('This is a Quotation (not yet confirmed). Would you like to confirm it as a Sales Order first?')) {
                     confirmQuotation(id);
                 }
             }
 
-            // Switch to Invoice tab
             switchTab('invoice');
 
-            // Generate invoice number if not already assigned
             if (!order.invoiceNumber) {
                 order.invoiceNumber = generateInvoiceNumber();
                 saveData();
             }
 
-            // Fill in invoice details from sales order
             const soInput = document.getElementById('invSalesOrderNo');
             soInput.value = order.invoiceNumber || order.orderNumber || order.quotationNumber || '';
-            // readOnly attribute is already set in HTML
 
             document.querySelector('[data-target="prev-company"]').value = order.clientSender || '';
             document.querySelector('[data-target="inv-date"]').value = order.date || '';
 
-            // Fill in new transport detail fields
             document.getElementById('invLocFrom').value = order.destFrom || '';
             document.getElementById('invLocTo').value = order.destTo || '';
             document.getElementById('invVehicleType').value = order.vehicle || '';
 
-            // Fill in QT No if available
             const qtInput = document.querySelector('[data-target="prev-qt"]');
             if (qtInput && order.quotationNumber) {
                 qtInput.value = order.quotationNumber;
             }
 
-            // Trigger input events to update preview
             soInput.dispatchEvent(new Event('input'));
             document.getElementById('invLocFrom').dispatchEvent(new Event('input'));
             document.getElementById('invLocTo').dispatchEvent(new Event('input'));
             document.getElementById('invVehicleType').dispatchEvent(new Event('input'));
             document.getElementById('invDriver').dispatchEvent(new Event('input'));
             if (qtInput) qtInput.dispatchEvent(new Event('input'));
-            if (execInput) execInput.dispatchEvent(new Event('input'));
-            if (termInput) termInput.dispatchEvent(new Event('input'));
 
-            // Add automatic item row
             document.getElementById('itemsBody').innerHTML = '';
             addInvoiceItem(`Transport: ${order.destFrom} to ${order.destTo} (${order.vehicle})`, order.gross, 1);
 
-            // Mark as invoiced
             order.invoiced = true;
             saveData();
             renderSalesOrders();
@@ -1282,33 +1254,21 @@
             alert('Sales Order data loaded into Invoice Generator!\nInvoice No: ' + order.invoiceNumber);
         }
 
-        // Function to convert quotation to confirmed sales order
         function confirmQuotation(id) {
             const order = salesOrders.find(o => o.id === id);
             if (!order || !order.quotationNumber) return;
-
-            // Generate sales order number
             order.orderNumber = generateOrderNumber();
-
-            // Update in array
             const idx = salesOrders.findIndex(o => o.id === id);
-            if (idx !== -1) {
-                salesOrders[idx] = order;
-            }
-
-            // Save and re-render
+            if (idx !== -1) salesOrders[idx] = order;
             saveData();
             applySalesFilter();
-
             alert('Quotation ' + order.quotationNumber + ' has been confirmed as Sales Order ' + order.orderNumber);
         }
 
-        // New function: Alert icon click - populate customer details and show status reminder
         function alertIconClick(id) {
             const order = salesOrders.find(o => o.id === id);
             if (!order) return;
 
-            // Show status reminder with more detailed info
             const statusMsg = order.invoiced
                 ? '✅ Status: Invoiced\n\nThis sales order has been invoiced successfully.\n\nThe invoice has been generated and the order is marked as complete.'
                 : '⚠️ Status: Not Invoiced\n\nThis sales order has not yet been invoiced.\n\nPlease generate an invoice for this order to update its status to "Invoiced" (✅).';
@@ -1318,10 +1278,8 @@
                   '\nRoute: ' + (order.destFrom || 'N/A') + ' to ' + (order.destTo || 'N/A') +
                   '\nVehicle: ' + (order.vehicle || 'N/A'));
 
-            // Switch to Invoice tab
             switchTab('invoice');
 
-            // Auto-populate customer details from the sales order using data-target attributes
             const soInput = document.getElementById('invSalesOrderNo');
             soInput.value = order.orderNumber || order.quotationNumber || '';
             soInput.readOnly = !!order.orderNumber;
@@ -1329,17 +1287,14 @@
             document.querySelector('[data-target="prev-company"]').value = order.clientSender || '';
             document.querySelector('[data-target="inv-date"]').value = order.date || '';
 
-            // Also populate new transport detail fields
             document.getElementById('invLocFrom').value = order.destFrom || '';
             document.getElementById('invLocTo').value = order.destTo || '';
             document.getElementById('invVehicleType').value = order.vehicle || '';
             document.querySelector('[data-target="prev-address"]').value = order.destFrom || '';
 
-            // Populate items section with order data
             document.getElementById('itemsBody').innerHTML = '';
             addInvoiceItem(`Transport: ${order.destFrom} to ${order.destTo} (${order.vehicle})`, order.gross, 1);
 
-            // Trigger updates to render on the live preview
             document.querySelector('[data-target="prev-company"]').dispatchEvent(new Event('input'));
             soInput.dispatchEvent(new Event('input'));
             document.querySelector('[data-target="inv-date"]').dispatchEvent(new Event('input'));
@@ -1372,9 +1327,8 @@
                 if (idx !== -1) salesOrders[idx] = { ...salesOrders[idx], ...orderData };
                 cancelEditSales();
             } else {
-                // Generate quotation number first (sales yet to confirm)
                 orderData.quotationNumber = generateQuotationNumber();
-                orderData.orderNumber = ''; // No sales order number yet
+                orderData.orderNumber = '';
                 salesOrders.push({ id: Date.now(), ...orderData });
             }
             clearSalesForm();
@@ -1394,15 +1348,11 @@
 
         function sortSalesOrders() { salesSortDesc = !salesSortDesc; renderSalesOrders(); }
 
-        // ================== TOGGLE PAID STATUS ==================
         async function togglePaidStatus(id, checked) {
             const order = salesOrders.find(o => o.id === id);
             if (!order) return;
             order.paid = checked;
-            // Auto-set invoiced status when paid
-            if (checked) {
-                order.invoiced = true;
-            }
+            if (checked) order.invoiced = true;
             try {
                 await saveData();
                 renderSalesOrders();
@@ -1438,7 +1388,6 @@
                 const isPaid = order.paid || false;
                 const statusIcon = (isInvoiced || isPaid) ? '<span title="Invoiced/Paid" style="cursor:pointer;" onclick="alertIconClick(' + order.id + ')">✅</span>' : '<span title="Not Invoiced" style="color:#d35400; cursor:pointer;" onclick="alertIconClick(' + order.id + ')">⚠️</span>';
 
-                // ---> I added the Invoice button right here below <---
                 tbody.innerHTML += `<tr>
                     <td><input type="checkbox" class="row-check" data-id="${order.id}"></td>
                     <td>${order.quotationNumber || '-'}</td>
@@ -1920,8 +1869,9 @@
         async function refreshData() { await loadData(true); alert('Data refreshed!'); }
         setInterval(async () => { try { if (!editingSalesId && !editingExpenseId) await loadData(false); } catch(e) {} }, 10000);
 
-        // ================== INVOICE SPECIFIC LOGIC ==================
+        // ================== INVOICE SPECIFIC LOGIC (FIXED) ==================
         function setupInvoiceSync() {
+            // Sync text inputs with preview
             document.querySelectorAll('.sync-input').forEach(input => {
                 input.addEventListener('input', (e) => {
                     const targetEl = document.getElementById(e.target.dataset.target);
@@ -1933,12 +1883,10 @@
                 });
             });
 
-            // Format date from YYYY-MM-DD to DD/MM/YYYY
+            // Format date helper
             function formatDateDDMMYYYY(dateStr) {
                 if (!dateStr) return '-';
-                if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
-                    return dateStr;
-                }
+                if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return dateStr;
                 if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
                     const [year, month, day] = dateStr.split('-');
                     return `${day}/${month}/${year}`;
@@ -1953,88 +1901,20 @@
                 const month = String(today.getMonth() + 1).padStart(2, '0');
                 const day = String(today.getDate()).padStart(2, '0');
                 const dateStr = `${year}-${month}-${day}`;
-
                 const dateInput = document.getElementById('input-date');
                 if (dateInput && !dateInput.value) {
                     dateInput.value = dateStr;
                     const targetEl = document.getElementById('inv-date');
-                    if (targetEl) {
-                        targetEl.textContent = `${day}/${month}/${year}`;
-                    }
+                    if (targetEl) targetEl.textContent = `${day}/${month}/${year}`;
                 }
             }
             setTodayDate();
 
-            // Text Sync with date formatting
-            document.querySelectorAll('.sync-input').forEach(input => {
-                input.addEventListener('input', (e) => {
-                    const targetId = e.target.dataset.target;
-                    const targetEl = document.getElementById(targetId);
-                    if (targetEl) {
-                        let value = e.target.value;
-                        if (e.target.classList.contains('date-input')) {
-                            value = formatDateDDMMYYYY(value);
-                        }
-                        targetEl.textContent = value || '-';
-                    }
-                });
-            });
-
-            // Items Table Logic
+            // Items table logic – delegated events
             const itemsBody = document.getElementById('itemsBody');
             const prevItems = document.getElementById('prev-items');
 
-            // Global function to add invoice item row with pre-filled data
-            window.addInvoiceItem = (description, price, qty) => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td style="border:1px solid var(--inv-border); padding:4px;">
-                        <input type="date" class="item-date date-input" style="border:none; width:100%; font-size:0.75rem;">
-                    </td>
-                    <td style="border:1px solid var(--inv-border); padding:4px;"><input type="text" class="item-desc" style="border:none; width:100%; font-size:0.75rem;" value="${description}"></td>
-                    <td style="border:1px solid var(--inv-border); padding:4px;"><input type="text" class="item-uom" style="border:none; width:100%; font-size:0.75rem;" value="LOT"></td>
-                    <td style="border:1px solid var(--inv-border); padding:4px;"><input type="number" class="item-price" style="border:none; width:100%; font-size:0.75rem;" value="${price}"></td>
-                    <td style="border:1px solid var(--inv-border); padding:4px;"><input type="number" class="item-qty" style="border:none; width:100%; font-size:0.75rem;" value="${qty}"></td>
-                    <td style="border:1px solid var(--inv-border); padding:4px; text-align:center;"><button class="btn-inv-remove remove-row">✕</button></td>
-                `;
-                itemsBody.appendChild(tr);
-
-                tr.querySelectorAll('input').forEach(inp => {
-                    inp.addEventListener('input', updatePreviewTable);
-                });
-                tr.querySelector('.remove-row').addEventListener('click', () => {
-                    tr.remove();
-                    updatePreviewTable();
-                });
-                updatePreviewTable();
-            };
-
-            const addRow = () => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td style="border:1px solid var(--inv-border); padding:4px;">
-                        <input type="date" class="item-date date-input" style="border:none; width:100%; font-size:0.75rem;">
-                    </td>
-                    <td style="border:1px solid var(--inv-border); padding:4px;"><input type="text" class="item-desc" style="border:none; width:100%; font-size:0.75rem;"></td>
-                    <td style="border:1px solid var(--inv-border); padding:4px;"><input type="text" class="item-uom" style="border:none; width:100%; font-size:0.75rem;"></td>
-                    <td style="border:1px solid var(--inv-border); padding:4px;"><input type="number" class="item-price" style="border:none; width:100%; font-size:0.75rem;"></td>
-                    <td style="border:1px solid var(--inv-border); padding:4px;"><input type="number" class="item-qty" style="border:none; width:100%; font-size:0.75rem;"></td>
-                    <td style="border:1px solid var(--inv-border); padding:4px; text-align:center;"><button class="btn-inv-remove remove-row">✕</button></td>
-                `;
-                itemsBody.appendChild(tr);
-
-                tr.querySelectorAll('input').forEach(inp => {
-                    inp.addEventListener('input', updatePreviewTable);
-                });
-                tr.querySelector('.remove-row').addEventListener('click', () => {
-                    tr.remove();
-                    updatePreviewTable();
-                });
-                updatePreviewTable();
-            };
-
-            document.getElementById('addItem').addEventListener('click', addRow);
-
+            // Preview updater
             const updatePreviewTable = () => {
                 prevItems.innerHTML = '';
                 const rows = itemsBody.querySelectorAll('tr');
@@ -2045,20 +1925,92 @@
                 }
                 let grandTotal = 0;
                 rows.forEach(row => {
-                    const dateInput = row.querySelector('.item-date').value;
+                    const dateInput = row.querySelector('.item-date')?.value || '';
                     const date = formatDateDDMMYYYY(dateInput);
-                    const desc = row.querySelector('.item-desc').value;
-                    const uom = row.querySelector('.item-uom').value;
-                    const price = parseFloat(row.querySelector('.item-price').value) || 0;
-                    const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+                    const desc = row.querySelector('.item-desc')?.value || '';
+                    const uom = row.querySelector('.item-uom')?.value || '';
+                    const price = parseFloat(row.querySelector('.item-price')?.value) || 0;
+                    const qty = parseFloat(row.querySelector('.item-qty')?.value) || 0;
                     const total = price * qty;
                     grandTotal += total;
 
                     const prevRow = document.createElement('tr');
-                    prevRow.innerHTML = `<td class="date-display">${date}</td><td>${desc}</td><td>${uom}</td><td>${price.toFixed(2)}</td><td>${qty}</td><td>${total.toFixed(2)}</td>`;
+                    prevRow.innerHTML = `
+                        <td class="date-display">${date}</td>
+                        <td>${desc}</td>
+                        <td>${uom}</td>
+                        <td>${price.toFixed(2)}</td>
+                        <td>${qty}</td>
+                        <td>${total.toFixed(2)}</td>`;
                     prevItems.appendChild(prevRow);
                 });
                 document.getElementById('grand-total').textContent = grandTotal.toFixed(2);
+            };
+
+            // Delegated input listener on itemsBody
+            itemsBody.addEventListener('input', updatePreviewTable);
+
+            // Delegated click for remove row
+            itemsBody.addEventListener('click', (e) => {
+                if (e.target.classList.contains('remove-row')) {
+                    e.target.closest('tr').remove();
+                    updatePreviewTable();
+                }
+            });
+
+            // Add new row button – clear old listener and re-attach
+            const addRowBtn = document.getElementById('addItem');
+            addRowBtn.replaceWith(addRowBtn.cloneNode(true)); // remove old listeners
+            const freshAddBtn = document.getElementById('addItem');
+            freshAddBtn.addEventListener('click', () => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="border:1px solid var(--inv-border); padding:4px;">
+                        <input type="date" class="item-date date-input" style="border:none; width:100%; font-size:0.75rem;">
+                    </td>
+                    <td style="border:1px solid var(--inv-border); padding:4px;">
+                        <input type="text" class="item-desc" style="border:none; width:100%; font-size:0.75rem;">
+                    </td>
+                    <td style="border:1px solid var(--inv-border); padding:4px;">
+                        <input type="text" class="item-uom" style="border:none; width:100%; font-size:0.75rem;">
+                    </td>
+                    <td style="border:1px solid var(--inv-border); padding:4px;">
+                        <input type="number" class="item-price" style="border:none; width:100%; font-size:0.75rem;">
+                    </td>
+                    <td style="border:1px solid var(--inv-border); padding:4px;">
+                        <input type="number" class="item-qty" style="border:none; width:100%; font-size:0.75rem;">
+                    </td>
+                    <td style="border:1px solid var(--inv-border); padding:4px; text-align:center;">
+                        <button class="btn-inv-remove remove-row">✕</button>
+                    </td>`;
+                itemsBody.appendChild(tr);
+                updatePreviewTable(); // show the empty row immediately
+            });
+
+            // Global helper for bridging from sales orders
+            window.addInvoiceItem = (description, price, qty) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="border:1px solid var(--inv-border); padding:4px;">
+                        <input type="date" class="item-date date-input" style="border:none; width:100%; font-size:0.75rem;">
+                    </td>
+                    <td style="border:1px solid var(--inv-border); padding:4px;">
+                        <input type="text" class="item-desc" style="border:none; width:100%; font-size:0.75rem;" value="${description}">
+                    </td>
+                    <td style="border:1px solid var(--inv-border); padding:4px;">
+                        <input type="text" class="item-uom" style="border:none; width:100%; font-size:0.75rem;" value="LOT">
+                    </td>
+                    <td style="border:1px solid var(--inv-border); padding:4px;">
+                        <input type="number" class="item-price" style="border:none; width:100%; font-size:0.75rem;" value="${price}">
+                    </td>
+                    <td style="border:1px solid var(--inv-border); padding:4px;">
+                        <input type="number" class="item-qty" style="border:none; width:100%; font-size:0.75rem;" value="${qty}">
+                    </td>
+                    <td style="border:1px solid var(--inv-border); padding:4px; text-align:center;">
+                        <button class="btn-inv-remove remove-row">✕</button>
+                    </td>`;
+                itemsBody.appendChild(tr);
+                updatePreviewTable();
             };
 
             // Export PDF
@@ -2071,7 +2023,6 @@
                     btn.innerHTML = '⏳ Processing...';
 
                     const element = document.getElementById('invoicePreview');
-
                     if (!element) {
                         alert('Error: Invoice preview not found!');
                         return;
@@ -2082,25 +2033,21 @@
                     const soNo = document.getElementById('inv-so').textContent || 'Untitled';
                     const clientName = document.querySelector('[data-target="prev-company"]').value || '';
 
-                    // Ask if this should be imported as sales order data (only if not from existing SO)
                     let shouldCreateSalesOrder = false;
                     const existingOrder = salesOrders.find(o => o.orderNumber === soNo || o.invoiceNumber === soNo);
 
-                    // Only ask if this is NOT from an existing sales order
                     if (!existingOrder && clientName) {
                         if (confirm('Should this be imported as sales order data?\n\nClick OK to create a new sales order with the invoice details.\nClick Cancel to just export the PDF without creating a sales order.')) {
                             shouldCreateSalesOrder = true;
                         }
                     }
 
-                    // Create new sales order if user confirmed
                     if (shouldCreateSalesOrder) {
                         const dateValue = document.querySelector('[data-target="inv-date"]').value || new Date().toISOString().split('T')[0];
                         const destFrom = document.getElementById('invLocFrom').value || document.querySelector('[data-target="prev-address"]').value || '';
                         const destTo = document.getElementById('invLocTo').value || '';
                         const vehicle = document.getElementById('invVehicleType').value || '';
 
-                        // Calculate gross from items
                         let gross = 0;
                         const rows = itemsBody.querySelectorAll('tr');
                         rows.forEach(row => {
