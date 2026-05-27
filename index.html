@@ -1013,12 +1013,12 @@
             if (tabName === 'invoice') { prepareNewInvoice(); }
         }
 
-        // Prepare form for a new invoice (Auto-generate number and set defaults)
+        // Prepare form for a new invoice (Set defaults for Sales Executive, Driver, Payment Term)
         function prepareNewInvoice() {
-            // Auto-generate Sales Order No when accessing Invoice Generator
+            // Clear Sales Order No field - user will input manually or it will be filled from sales order
             const invNoField = document.getElementById('invSalesOrderNo');
-            invNoField.value = generateInvoiceNumber();
-            invNoField.readOnly = false; // Allow editing if changes needed
+            invNoField.value = '';
+            invNoField.readOnly = false; // Allow editing
             
             // Set Default Values - Preload like Payment Details section
             const salesExecField = document.querySelector('[data-target="prev-exec"]');
