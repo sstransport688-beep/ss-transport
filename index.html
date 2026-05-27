@@ -634,7 +634,7 @@
         </div>
     </div>
 
-    <!-- INVOICE PANEL (Final) -->
+    <!-- INVOICE PANEL (Final with Vehicle Type in Items) -->
     <div class="panel" id="invoicePanel">
         <div class="invoice-container">
             <div class="inv-panel">
@@ -663,6 +663,7 @@
                                 <th style="padding:6px; border:1px solid var(--inv-border); font-size:0.75rem;">From</th>
                                 <th style="padding:6px; border:1px solid var(--inv-border); font-size:0.75rem;">To</th>
                                 <th style="padding:6px; border:1px solid var(--inv-border); font-size:0.75rem;">UOM</th>
+                                <th style="padding:6px; border:1px solid var(--inv-border); font-size:0.75rem;">Vehicle Type</th>
                                 <th style="padding:6px; border:1px solid var(--inv-border); font-size:0.75rem;">Price</th>
                                 <th style="padding:6px; border:1px solid var(--inv-border); font-size:0.75rem;">QTY</th>
                                 <th style="padding:6px; border:1px solid var(--inv-border); font-size:0.75rem;">Act</th>
@@ -727,10 +728,10 @@
                     <div class="table-wrapper">
                         <table class="inv-items-table">
                             <thead>
-                                <tr><th>Date</th><th>From</th><th>To</th><th>UOM</th><th>Price</th><th>QTY</th><th>Total</th></tr>
+                                <tr><th>Date</th><th>From</th><th>To</th><th>UOM</th><th>Vehicle</th><th>Price</th><th>QTY</th><th>Total</th></tr>
                             </thead>
                             <tbody id="prev-items">
-                                <tr><td colspan="7" class="empty">No items added yet</td></tr>
+                                <tr><td colspan="8" class="empty">No items added yet</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -1125,7 +1126,7 @@
             setSalesEditingMode(id);
         }
 
-        // Bridge to Invoice (updated for From/To fields)
+        // Bridge to Invoice (now includes vehicle)
         function bridgeToInvoice(id) {
             const order = salesOrders.find(o => o.id === id);
             if (!order) return;
@@ -1160,9 +1161,9 @@
             document.querySelector('[data-target="inv-date"]').dispatchEvent(new Event('input'));
             if (qtInput) qtInput.dispatchEvent(new Event('input'));
 
-            // Add item row using new addInvoiceItem signature (from, to, price, qty)
+            // Add item row with from, to, price, qty, and vehicle
             document.getElementById('itemsBody').innerHTML = '';
-            addInvoiceItem(order.destFrom || '', order.destTo || '', order.gross, 1);
+            addInvoiceItem(order.destFrom || '', order.destTo || '', order.gross, 1, order.vehicle || '');
 
             order.invoiced = true;
             saveData();
@@ -1206,7 +1207,7 @@
             document.querySelector('[data-target="prev-address"]').value = order.destFrom || '';
 
             document.getElementById('itemsBody').innerHTML = '';
-            addInvoiceItem(order.destFrom || '', order.destTo || '', order.gross, 1);
+            addInvoiceItem(order.destFrom || '', order.destTo || '', order.gross, 1, order.vehicle || '');
 
             document.querySelector('[data-target="prev-company"]').dispatchEvent(new Event('input'));
             soInput.dispatchEvent(new Event('input'));
@@ -1848,7 +1849,7 @@
         async function refreshData() { await loadData(true); alert('Data refreshed!'); }
         setInterval(async () => { try { if (!editingSalesId && !editingExpenseId) await loadData(false); } catch(e) {} }, 10000);
 
-        // ================== INVOICE SPECIFIC LOGIC (FINAL) ==================
+        // ================== INVOICE SPECIFIC LOGIC (Final) ==================
         function setupInvoiceSync() {
             // Sync text inputs with preview
             document.querySelectorAll('.sync-input').forEach(input => {
@@ -1893,12 +1894,12 @@
             const itemsBody = document.getElementById('itemsBody');
             const prevItems = document.getElementById('prev-items');
 
-            // Preview updater (now handles From/To columns)
+            // Preview updater (now handles Vehicle column)
             const updatePreviewTable = () => {
                 prevItems.innerHTML = '';
                 const rows = itemsBody.querySelectorAll('tr');
                 if (rows.length === 0) {
-                    prevItems.innerHTML = '<tr><td colspan="7" class="empty">No items added yet</td></tr>';
+                    prevItems.innerHTML = '<tr><td colspan="8" class="empty">No items added yet</td></tr>';
                     document.getElementById('grand-total').textContent = '0.00';
                     return;
                 }
@@ -1909,6 +1910,7 @@
                     const from = row.querySelector('.item-from')?.value || '';
                     const to   = row.querySelector('.item-to')?.value || '';
                     const uom  = row.querySelector('.item-uom')?.value || '';
+                    const vehicle = row.querySelector('.item-vehicle')?.value || '';
                     const price = parseFloat(row.querySelector('.item-price')?.value) || 0;
                     const qty   = parseFloat(row.querySelector('.item-qty')?.value) || 0;
                     const total = price * qty;
@@ -1920,6 +1922,7 @@
                         <td>${from}</td>
                         <td>${to}</td>
                         <td>${uom}</td>
+                        <td>${vehicle}</td>
                         <td>${price.toFixed(2)}</td>
                         <td>${qty}</td>
                         <td>${total.toFixed(2)}</td>`;
@@ -1939,7 +1942,7 @@
                 }
             });
 
-            // Add new row button
+            // Add new row button (now includes Vehicle input)
             const addRowBtn = document.getElementById('addItem');
             addRowBtn.replaceWith(addRowBtn.cloneNode(true));
             const freshAddBtn = document.getElementById('addItem');
@@ -1959,6 +1962,9 @@
                         <input type="text" class="item-uom" style="border:none; width:100%; font-size:0.75rem;" value="LOT">
                     </td>
                     <td style="border:1px solid var(--inv-border); padding:4px;">
+                        <input type="text" class="item-vehicle" style="border:none; width:100%; font-size:0.75rem;" placeholder="Vehicle">
+                    </td>
+                    <td style="border:1px solid var(--inv-border); padding:4px;">
                         <input type="number" class="item-price" style="border:none; width:100%; font-size:0.75rem;" placeholder="0.00">
                     </td>
                     <td style="border:1px solid var(--inv-border); padding:4px;">
@@ -1971,8 +1977,8 @@
                 updatePreviewTable();
             });
 
-            // Global helper (updated signature)
-            window.addInvoiceItem = (from, to, price, qty) => {
+            // Global helper (updated signature to include vehicle)
+            window.addInvoiceItem = (from, to, price, qty, vehicle = '') => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td style="border:1px solid var(--inv-border); padding:4px;">
@@ -1988,6 +1994,9 @@
                         <input type="text" class="item-uom" style="border:none; width:100%; font-size:0.75rem;" value="LOT">
                     </td>
                     <td style="border:1px solid var(--inv-border); padding:4px;">
+                        <input type="text" class="item-vehicle" style="border:none; width:100%; font-size:0.75rem;" value="${vehicle}">
+                    </td>
+                    <td style="border:1px solid var(--inv-border); padding:4px;">
                         <input type="number" class="item-price" style="border:none; width:100%; font-size:0.75rem;" value="${price}">
                     </td>
                     <td style="border:1px solid var(--inv-border); padding:4px;">
@@ -2000,7 +2009,7 @@
                 updatePreviewTable();
             };
 
-            // Export PDF (adjusted for new fields)
+            // Export PDF (now creates one sales order per item row with vehicle)
             document.getElementById('exportPdf').addEventListener('click', async () => {
                 const btn = document.getElementById('exportPdf');
                 const originalText = btn.innerHTML;
@@ -2029,48 +2038,52 @@
                         }
                     }
 
-if (shouldCreateSalesOrder) {
-    const dateValue = document.querySelector('[data-target="inv-date"]').value || new Date().toISOString().split('T')[0];
+                    if (shouldCreateSalesOrder) {
+                        const dateValue = document.querySelector('[data-target="inv-date"]').value || new Date().toISOString().split('T')[0];
+                        const rows = itemsBody.querySelectorAll('tr');
+                        const createdOrders = [];
 
-    // Extract first item's "From" and last item's "To" to represent the overall route
-    const rows = itemsBody.querySelectorAll('tr');
-    let destFrom = '';
-    let destTo   = '';
-    if (rows.length > 0) {
-        destFrom = rows[0].querySelector('.item-from')?.value || '';
-        destTo   = rows[rows.length - 1].querySelector('.item-to')?.value || '';
-    }
+                        rows.forEach((row, index) => {
+                            const from    = row.querySelector('.item-from')?.value.trim()    || '';
+                            const to      = row.querySelector('.item-to')?.value.trim()      || '';
+                            const vehicle = row.querySelector('.item-vehicle')?.value.trim() || '';
+                            const price   = parseFloat(row.querySelector('.item-price')?.value) || 0;
+                            const qty     = parseFloat(row.querySelector('.item-qty')?.value)   || 1;
+                            const gross   = price * qty;
 
-    let gross = 0;
-    rows.forEach(row => {
-        const price = parseFloat(row.querySelector('.item-price')?.value) || 0;
-        const qty   = parseFloat(row.querySelector('.item-qty')?.value)   || 0;
-        gross += price * qty;
-    });
+                            if (!from && !to) return;   // skip completely empty rows
 
-    const newOrder = {
-        id: Date.now(),
-        orderNumber: generateOrderNumber(),
-        invoiceNumber: generateInvoiceNumber(),
-        date: dateValue,
-        clientSender: clientName,
-        destFrom: destFrom,
-        destTo: destTo,
-        vehicle: '',   // no vehicle field in invoice – edit manually if needed
-        gross: gross,
-        billing: false,
-        paid: false,
-        invoiced: true
-    };
+                            const newOrder = {
+                                id: Date.now() + index,
+                                orderNumber: generateOrderNumber(),
+                                invoiceNumber: generateInvoiceNumber(),
+                                date: dateValue,
+                                clientSender: clientName,
+                                destFrom: from,
+                                destTo: to,
+                                vehicle: vehicle,
+                                gross: gross,
+                                billing: false,
+                                paid: false,
+                                invoiced: true
+                            };
 
-    salesOrders.push(newOrder);
-    saveData();
-    renderSalesOrders();
+                            salesOrders.push(newOrder);
+                            createdOrders.push(newOrder);
+                        });
 
-    alert('New sales order created: ' + newOrder.orderNumber +
-          '\nInvoice No: ' + newOrder.invoiceNumber +
-          '\nRoute: ' + destFrom + ' → ' + destTo);
-}
+                        if (createdOrders.length > 0) {
+                            saveData();
+                            renderSalesOrders();
+                            let message = `${createdOrders.length} sales order(s) created:\n`;
+                            createdOrders.forEach(o => {
+                                message += `• ${o.orderNumber} : ${o.destFrom} → ${o.destTo}  RM ${o.gross.toFixed(2)}\n`;
+                            });
+                            alert(message);
+                        } else {
+                            alert('No valid items to create sales orders.');
+                        }
+                    }
 
                     const opt = {
                         margin: [0.3, 0.3, 0.3, 0.3],
