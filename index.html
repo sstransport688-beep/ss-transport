@@ -1026,15 +1026,15 @@
             const paymentTermField = document.querySelector('[data-target="prev-term"]');
             
             // Preload default values (Sales Executive: LCT, Driver: LCT, Payment Term: COD/Upon Job Delivered)
-            salesExecField.value = INVOICE_DEFAULTS.salesExecutive;
-            driverField.value = INVOICE_DEFAULTS.driverName;
-            paymentTermField.value = INVOICE_DEFAULTS.paymentTerm;
+            if (salesExecField) salesExecField.value = INVOICE_DEFAULTS.salesExecutive;
+            if (driverField) driverField.value = INVOICE_DEFAULTS.driverName;
+            if (paymentTermField) paymentTermField.value = INVOICE_DEFAULTS.paymentTerm;
             
             // Trigger input events to sync preview with default values
             invNoField.dispatchEvent(new Event('input'));
-            salesExecField.dispatchEvent(new Event('input'));
-            driverField.dispatchEvent(new Event('input'));
-            paymentTermField.dispatchEvent(new Event('input'));
+            if (salesExecField) salesExecField.dispatchEvent(new Event('input'));
+            if (driverField) driverField.dispatchEvent(new Event('input'));
+            if (paymentTermField) paymentTermField.dispatchEvent(new Event('input'));
         }
 
         function confirmDelete(message, callback) { if (confirm(message)) callback(); }
