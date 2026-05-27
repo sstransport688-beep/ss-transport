@@ -2029,41 +2029,48 @@
                         }
                     }
 
-                    if (shouldCreateSalesOrder) {
-                        const dateValue = document.querySelector('[data-target="inv-date"]').value || new Date().toISOString().split('T')[0];
-                        const destFrom = document.querySelector('[data-target="prev-address"]').value || '';
-                        const destTo = '';
-                        const vehicle = '';
+if (shouldCreateSalesOrder) {
+    const dateValue = document.querySelector('[data-target="inv-date"]').value || new Date().toISOString().split('T')[0];
 
-                        let gross = 0;
-                        const rows = itemsBody.querySelectorAll('tr');
-                        rows.forEach(row => {
-                            const price = parseFloat(row.querySelector('.item-price').value) || 0;
-                            const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
-                            gross += price * qty;
-                        });
+    // Extract first item's "From" and last item's "To" to represent the overall route
+    const rows = itemsBody.querySelectorAll('tr');
+    let destFrom = '';
+    let destTo   = '';
+    if (rows.length > 0) {
+        destFrom = rows[0].querySelector('.item-from')?.value || '';
+        destTo   = rows[rows.length - 1].querySelector('.item-to')?.value || '';
+    }
 
-                        const newOrder = {
-                            id: Date.now(),
-                            orderNumber: generateOrderNumber(),
-                            invoiceNumber: generateInvoiceNumber(),
-                            date: dateValue,
-                            clientSender: clientName,
-                            destFrom: destFrom,
-                            destTo: destTo,
-                            vehicle: vehicle,
-                            gross: gross,
-                            billing: false,
-                            paid: false,
-                            invoiced: true
-                        };
+    let gross = 0;
+    rows.forEach(row => {
+        const price = parseFloat(row.querySelector('.item-price')?.value) || 0;
+        const qty   = parseFloat(row.querySelector('.item-qty')?.value)   || 0;
+        gross += price * qty;
+    });
 
-                        salesOrders.push(newOrder);
-                        saveData();
-                        renderSalesOrders();
+    const newOrder = {
+        id: Date.now(),
+        orderNumber: generateOrderNumber(),
+        invoiceNumber: generateInvoiceNumber(),
+        date: dateValue,
+        clientSender: clientName,
+        destFrom: destFrom,
+        destTo: destTo,
+        vehicle: '',   // no vehicle field in invoice – edit manually if needed
+        gross: gross,
+        billing: false,
+        paid: false,
+        invoiced: true
+    };
 
-                        alert('New sales order created: ' + newOrder.orderNumber + '\nInvoice No: ' + newOrder.invoiceNumber);
-                    }
+    salesOrders.push(newOrder);
+    saveData();
+    renderSalesOrders();
+
+    alert('New sales order created: ' + newOrder.orderNumber +
+          '\nInvoice No: ' + newOrder.invoiceNumber +
+          '\nRoute: ' + destFrom + ' → ' + destTo);
+}
 
                     const opt = {
                         margin: [0.3, 0.3, 0.3, 0.3],
