@@ -919,22 +919,35 @@
             await fetch(`${API_URL}?sheet=CustomVehicles&action=replace`, { method:'POST', body: JSON.stringify([vehicleHeaders, ...vehicleArray]) });
         }
 
-        // ================== VEHICLE DROPDOWN ==================
+        // ================== VEHICLE DROPDOWN (FIXED) ==================
         function buildVehicleOptions(selectedVehicle = null) {
             const select = document.getElementById('soVehicle');
             select.innerHTML = '';
+
+            // placeholder for empty selection
+            const placeholder = new Option('-- Select Vehicle --', '');
+            placeholder.disabled = true;
+            placeholder.hidden = true;
+            select.add(placeholder);
+
             STANDARD_VEHICLES.forEach(v => select.add(new Option(v, v)));
             customVehicles.forEach(v => select.add(new Option(v, v)));
             select.add(new Option('Others…', '__others__'));
+
             if (selectedVehicle) {
                 if ([...select.options].some(opt => opt.value === selectedVehicle)) {
-                    select.value = selectedVehicle; hideCustomVehicleInput();
+                    select.value = selectedVehicle;
+                    hideCustomVehicleInput();
                 } else {
-                    select.value = '__others__'; document.getElementById('customVehicle').value = selectedVehicle; showCustomVehicleInput();
+                    select.value = '__others__';
+                    document.getElementById('customVehicle').value = selectedVehicle;
+                    showCustomVehicleInput();
                 }
             } else {
-                select.value = STANDARD_VEHICLES[0]; hideCustomVehicleInput();
+                select.value = '';
+                hideCustomVehicleInput();
             }
+
             updateVehicleFilterDropdown();
         }
 
@@ -1094,7 +1107,8 @@
             document.getElementById('soClientSender').value = '';
             document.getElementById('soDestFrom').value = '';
             document.getElementById('soDestTo').value = '';
-            document.getElementById('soVehicle').value = STANDARD_VEHICLES[0]; hideCustomVehicleInput();
+            document.getElementById('soVehicle').value = '';
+            hideCustomVehicleInput();
             document.getElementById('soGross').value = '';
             document.getElementById('soBilling').checked = false;
             document.getElementById('soPaid').checked = false;
@@ -1256,10 +1270,7 @@
             });
         }
 
-        function sortSalesOrders() {
-    salesSortDesc = !salesSortDesc;
-    renderSalesOrders();
-}
+        function sortSalesOrders() { salesSortDesc = !salesSortDesc; renderSalesOrders(); }
 
         async function togglePaidStatus(id, checked) {
             const order = salesOrders.find(o => o.id === id);
@@ -1281,38 +1292,15 @@
         function renderSalesOrders() {
             const tbody = document.querySelector('#soTable tbody');
             salesSortMode = document.getElementById('soSortMode').value;
-const sorted = [...filteredSalesOrders].sort((a, b) => {
-    const dA = new Date(a.date);
-    const dB = new Date(b.date);
-    let primary = 0, secondary = 0, tertiary = 0;
-
-    if (salesSortMode === 'date') {
-        primary = dA - dB;
-        if (primary === 0) {
-            // if same date, use order number (descending when salesSortDesc is true)
-            secondary = (a.orderNumber || '').localeCompare(b.orderNumber || '');
-        }
-    } else if (salesSortMode === 'month') {
-        primary = dA.getMonth() - dB.getMonth();
-        if (primary === 0) {
-            secondary = dA.getDate() - dB.getDate();
-            if (secondary === 0) {
-                tertiary = (a.orderNumber || '').localeCompare(b.orderNumber || '');
-            }
-        }
-    } else if (salesSortMode === 'year') {
-        primary = dA.getFullYear() - dB.getFullYear();
-        if (primary === 0) {
-            secondary = dA - dB;
-            if (secondary === 0) {
-                tertiary = (a.orderNumber || '').localeCompare(b.orderNumber || '');
-            }
-        }
-    }
-
-    let result = primary !== 0 ? primary : (secondary !== 0 ? secondary : tertiary);
-    return salesSortDesc ? -result : result;
-});
+            const sorted = [...filteredSalesOrders].sort((a,b) => {
+                const dA = new Date(a.date), dB = new Date(b.date);
+                let primary = 0, secondary = 0;
+                if (salesSortMode === 'date') primary = dA - dB;
+                else if (salesSortMode === 'month') { primary = dA.getMonth() - dB.getMonth(); if (!primary) secondary = dA.getDate() - dB.getDate(); }
+                else if (salesSortMode === 'year') { primary = dA.getFullYear() - dB.getFullYear(); if (!primary) secondary = dA - dB; }
+                let result = primary !== 0 ? primary : secondary;
+                return salesSortDesc ? -result : result;
+            });
             document.getElementById('soSortArrow').textContent = salesSortDesc ? '▼' : '▲';
             tbody.innerHTML = '';
 
