@@ -15,6 +15,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
+        /* All CSS unchanged – same as the previous fully working version */
         body { font-family: Arial, sans-serif; margin: auto; padding: 20px; box-sizing: border-box; }
         body.max-width-constrained { max-width: 1100px; }
         h1 { margin-bottom: 5px; }
@@ -1548,7 +1549,6 @@
             const totalExpenses = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
             const netProfit = totalSales - totalExpenses;
 
-            // Store on window so calculateTax can use them
             window.currentNetProfit = netProfit;
             window.currentStart = start;
             window.currentEnd = end;
@@ -1955,7 +1955,7 @@
             });
         }
 
-        // ================== SYSTEM INVOICE LOGIC (IMPROVED EXPORT) ==================
+        // ================== SYSTEM INVOICE LOGIC (FIXED EXPORT – ONCLONE METHOD) ==================
         function generateSysInvoiceNo() {
             const now = new Date();
             const d = String(now.getDate()).padStart(2,'0');
@@ -2006,53 +2006,46 @@
             const panel = document.getElementById('sysInvoicePanel');
             const exportBtn = document.getElementById('sysExportBtn');
             const originalBtnText = exportBtn.innerHTML;
-
-            // Show loading state on button
             exportBtn.disabled = true;
             exportBtn.innerHTML = '⏳ Generating PDF...';
-
-            // 1. Replace inputs with spans (store replacements to restore later)
-            const replacements = [];
-            panel.querySelectorAll('input[type="text"], input[type="number"], input[type="date"]').forEach(input => {
-                const span = document.createElement('span');
-                span.textContent = input.value || '';
-                span.style.display = 'inline-block';
-                span.style.width = '100%';
-                span.style.padding = '4px';
-                span.style.fontSize = '0.9em';
-                input.parentNode.replaceChild(span, input);
-                replacements.push({ span, input, parent: span.parentNode });
-            });
-
-            // 2. Hide all buttons
-            const buttons = panel.querySelectorAll('button');
-            buttons.forEach(btn => btn.style.display = 'none');
 
             const opt = {
                 margin: [0.5, 0.5, 0.5, 0.5],
                 filename: `SystemInvoice_${document.getElementById('sysInvNo').value || 'untitled'}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, logging: false },
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    onclone: function(clonedDoc) {
+                        // Modify the cloned document only – live page stays untouched
+                        const cloneBody = clonedDoc.body || clonedDoc.documentElement;
+
+                        // Replace inputs with spans showing their current values
+                        cloneBody.querySelectorAll('input[type="text"], input[type="number"], input[type="date"]').forEach(input => {
+                            const span = clonedDoc.createElement('span');
+                            span.textContent = input.value || '';
+                            span.style.display = 'inline-block';
+                            span.style.width = '100%';
+                            span.style.padding = '4px';
+                            span.style.fontSize = '0.9em';
+                            input.parentNode.replaceChild(span, input);
+                        });
+
+                        // Remove all buttons from the clone
+                        cloneBody.querySelectorAll('button').forEach(btn => btn.remove());
+                    }
+                },
                 jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
                 pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
             };
 
             html2pdf().set(opt).from(panel).save()
-                .then(() => {
-                    // Success
-                })
                 .catch(err => {
                     console.error('PDF export error:', err);
                     alert('An error occurred while generating the PDF. Please try again.');
                 })
                 .finally(() => {
-                    // 3. Restore inputs
-                    replacements.forEach(({ span, input }) => {
-                        span.parentNode.replaceChild(input, span);
-                    });
-                    // 4. Restore buttons
-                    buttons.forEach(btn => btn.style.display = '');
-                    // 5. Restore export button
                     exportBtn.disabled = false;
                     exportBtn.innerHTML = originalBtnText;
                 });
