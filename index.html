@@ -168,6 +168,11 @@
         .date-display { font-variant-numeric: tabular-nums; }
         .upload-section { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 2px solid var(--inv-bg); }
 
+        /* System Invoice Styles */
+        .sys-invoice-table th, .sys-invoice-table td { padding: 6px; font-size: 0.9em; }
+        .sys-invoice-table input { width: 100%; box-sizing: border-box; border: none; padding: 4px; font-size: 0.9em; }
+        .sys-invoice-table input[type="number"] { text-align: right; }
+
         @media (max-width: 600px) {
             body { padding: 10px; }
             .form-row { flex-direction: column; height: auto; align-items: stretch; margin-bottom: 12px; }
@@ -201,10 +206,11 @@
         <button class="tab active" onclick="switchTab('sales')">📝 Sales Orders</button>
         <button class="tab" onclick="switchTab('expenses')">🧾 Expenses</button>
         <button class="tab" onclick="switchTab('report')">📈 Report & Tax</button>
-        <button class="tab" onclick="switchTab('invoice')" style="background: #e8f0fe; color: #007bff; border: 1px solid #007bff;">📄 Invoice Generator</button>
+        <button class="tab" onclick="switchTab('invoice')">📄 Invoice Generator</button>
+        <button class="tab" onclick="switchTab('sysInvoice')">🧾 System Invoice</button>
     </div>
 
-    <!-- SALES PANEL (Date moved to first, Remark column added) -->
+    <!-- ================== SALES PANEL (unchanged) ================== -->
     <div class="panel active" id="salesPanel">
         <h3 id="salesFormTitle">Create Sales Order</h3>
 
@@ -297,7 +303,7 @@
         </div>
     </div>
 
-    <!-- EXPENSES PANEL (unchanged) -->
+    <!-- ================== EXPENSES PANEL (unchanged) ================== -->
     <div class="panel" id="expensesPanel">
         <h3>Log Expense</h3>
         <div class="form-row"><label for="expBillNo">Bill No:<span class="mandatory">*</span></label><div class="input-container"><input type="text" id="expBillNo" placeholder="Invoice / receipt number"></div></div>
@@ -343,7 +349,7 @@
         </div>
     </div>
 
-    <!-- REPORT & TAX PANEL (unchanged) -->
+    <!-- ================== REPORT & TAX PANEL (unchanged) ================== -->
     <div class="panel" id="reportPanel">
         <h3>Net Profit Report & Tax Calculation</h3>
         <div class="form-row"><label for="periodType">Period:</label><div class="input-container"><select id="periodType" onchange="updatePeriodInputs()"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select></div></div>
@@ -365,7 +371,7 @@
         </div>
     </div>
 
-    <!-- INVOICE PANEL (unchanged) -->
+    <!-- ================== ORIGINAL INVOICE PANEL (unchanged) ================== -->
     <div class="panel" id="invoicePanel">
         <div class="invoice-container">
             <div class="inv-panel">
@@ -491,6 +497,78 @@
 
                     <div class="inv-footer">Thank you for your business | COD / upon delivery | e-Receipt valid</div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================== SYSTEM INVOICE PANEL (NEW) ================== -->
+    <div class="panel" id="sysInvoicePanel">
+        <div style="max-width: 800px; margin: 0 auto;">
+            <h3>🧾 System Invoice Generator</h3>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px;">
+                <div class="form-row" style="height: auto; flex-direction: column; align-items: flex-start;">
+                    <label style="width:100%; text-align:left;">Sender Name:</label>
+                    <input type="text" id="sysSenderName" style="width:100%; height:35px;">
+                </div>
+                <div class="form-row" style="height: auto; flex-direction: column; align-items: flex-start;">
+                    <label style="width:100%; text-align:left;">Sender IC:</label>
+                    <input type="text" id="sysSenderIC" style="width:100%; height:35px;">
+                </div>
+                <div class="form-row" style="height: auto; flex-direction: column; align-items: flex-start;">
+                    <label style="width:100%; text-align:left;">Bank Name:</label>
+                    <input type="text" id="sysBankName" style="width:100%; height:35px;">
+                </div>
+                <div class="form-row" style="height: auto; flex-direction: column; align-items: flex-start;">
+                    <label style="width:100%; text-align:left;">Bank Account No.:</label>
+                    <input type="text" id="sysBankAcc" style="width:100%; height:35px;">
+                </div>
+                <div class="form-row" style="height: auto; flex-direction: column; align-items: flex-start;">
+                    <label style="width:100%; text-align:left;">Invoice Date:</label>
+                    <input type="date" id="sysInvDate" style="width:100%; height:35px;">
+                </div>
+                <div class="form-row" style="height: auto; flex-direction: column; align-items: flex-start;">
+                    <label style="width:100%; text-align:left;">Invoice No.:</label>
+                    <input type="text" id="sysInvNo" style="width:100%; height:35px; background:#f0f0f0;" readonly>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; background: #f8f9fa; padding: 10px; border-radius: 6px;">
+                <strong>Company Name:</strong> Sina Star Transport<br>
+                <strong>Address:</strong> Puchong, Selangor<br>
+                <strong>Attn:</strong> Mr Leong &nbsp;|&nbsp; <strong>Contact No.:</strong> 0122336290
+            </div>
+
+            <h4 style="margin-top: 20px;">Items</h4>
+            <div class="table-wrapper">
+                <table id="sysItemsTable" class="sys-invoice-table">
+                    <thead>
+                        <tr style="background:#f1f5f9;">
+                            <th style="width:60px;">No.</th>
+                            <th>Description</th>
+                            <th style="width:80px;">Qty</th>
+                            <th style="width:100px;">Unit Price (RM)</th>
+                            <th style="width:120px;">Total Price (RM)</th>
+                            <th style="width:40px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="sysItemsBody">
+                        <!-- dynamic rows -->
+                    </tbody>
+                </table>
+            </div>
+            <button class="btn-primary" onclick="addSysItemRow()" style="margin-top: 5px;">+ Add New Item</button>
+
+            <div style="text-align: right; font-size: 1.2em; font-weight: bold; margin-top: 15px;">
+                Grand Total: RM <span id="sysGrandTotal">0.00</span>
+            </div>
+
+            <div style="text-align: center; margin-top: 15px; color: #666; font-style: italic;">
+                System auto-generated, no signature is required
+            </div>
+
+            <div style="text-align: center; margin-top: 15px;">
+                <button class="btn-primary" onclick="exportSysInvoicePDF()">📄 Export PDF</button>
             </div>
         </div>
     </div>
@@ -648,10 +726,10 @@
             await fetch(`${API_URL}?sheet=CustomVehicles&action=replace`, { method:'POST', body: JSON.stringify([vehicleHeaders, ...vehicleArray]) });
         }
 
-        // ================== VEHICLE DROPDOWN (FIXED – survives refresh) ==================
+        // ================== VEHICLE DROPDOWN (FIXED) ==================
         function buildVehicleOptions(selectedVehicle = null) {
             const select = document.getElementById('soVehicle');
-            const currentValue = select.value || '';   // capture before clearing
+            const currentValue = select.value || '';
             select.innerHTML = '';
 
             const placeholder = new Option('-- Select Vehicle --', '');
@@ -667,7 +745,6 @@
             if (selectedVehicle) {
                 valueToSet = selectedVehicle;
             } else if (currentValue) {
-                // keep user's choice after refresh
                 if ([...select.options].some(opt => opt.value === currentValue)) {
                     valueToSet = currentValue;
                 } else {
@@ -728,7 +805,7 @@
             }
         }
 
-        // ================== TAB SWITCHING ==================
+        // ================== TAB SWITCHING (extended) ==================
         function switchTab(tabName) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -749,6 +826,7 @@
             if (tabName === 'sales') { buildVehicleOptions(); applySalesFilter(); }
             if (tabName === 'expenses') { applyExpenseFilter(); }
             if (tabName === 'invoice') { prepareNewInvoice(); }
+            if (tabName === 'sysInvoice') { prepareSysInvoice(); }
         }
 
         function prepareNewInvoice() {
@@ -1599,7 +1677,7 @@
                 o.paid?'Yes':'No',
                 o.remark || ''
             ]);
-            exportStyledExcel([headers, ...rows], 'Sales Orders Report', 'Sales_Orders', 'Sales Orders', [14,18,18,22,22,22,16,14,10,8,20], [7]); // index 7 is Gross (price)
+            exportStyledExcel([headers, ...rows], 'Sales Orders Report', 'Sales_Orders', 'Sales Orders', [14,18,18,22,22,22,16,14,10,8,20], [7]);
         }
 
         function exportExpenses() {
@@ -1622,7 +1700,7 @@
         async function refreshData() { await loadData(true); alert('Data refreshed!'); }
         setInterval(async () => { try { if (!editingSalesId && !editingExpenseId) await loadData(false); } catch(e) {} }, 10000);
 
-        // ================== INVOICE SPECIFIC LOGIC (unchanged) ==================
+        // ================== ORIGINAL INVOICE LOGIC (unchanged) ==================
         function setupInvoiceSync() {
             document.querySelectorAll('.sync-input').forEach(input => {
                 input.addEventListener('input', (e) => {
@@ -1885,12 +1963,88 @@
             });
         }
 
+        // ================== SYSTEM INVOICE LOGIC (NEW) ==================
+        function generateSysInvoiceNo() {
+            const now = new Date();
+            const d = String(now.getDate()).padStart(2,'0');
+            const m = String(now.getMonth()+1).padStart(2,'0');
+            const y = now.getFullYear();
+            return `INV${d}${m}${y}-001`;
+        }
+
+        function addSysItemRow(desc = '', qty = 1, price = 0) {
+            const tbody = document.getElementById('sysItemsBody');
+            const rowIndex = tbody.children.length + 1;
+            const tr = document.createElement('tr');
+
+            tr.innerHTML = `
+                <td style="text-align:center;">${rowIndex}</td>
+                <td><input type="text" class="sys-desc" value="${desc}" placeholder="Description"></td>
+                <td><input type="number" class="sys-qty" value="${qty}" min="1" step="1" style="text-align:center;" onchange="updateSysTotal()"></td>
+                <td><input type="number" class="sys-price" value="${price}" min="0" step="0.01" onchange="updateSysTotal()"></td>
+                <td style="text-align:right; font-weight:bold;" class="sys-row-total">0.00</td>
+                <td><button class="btn-danger" onclick="this.closest('tr').remove(); renumberSysItems(); updateSysTotal();">✕</button></td>
+            `;
+            tbody.appendChild(tr);
+            updateSysTotal();
+            renumberSysItems();
+        }
+
+        function renumberSysItems() {
+            const rows = document.querySelectorAll('#sysItemsBody tr');
+            rows.forEach((row, idx) => {
+                row.cells[0].textContent = idx + 1;
+            });
+        }
+
+        function updateSysTotal() {
+            let grand = 0;
+            document.querySelectorAll('#sysItemsBody tr').forEach(row => {
+                const qty = parseFloat(row.querySelector('.sys-qty')?.value) || 0;
+                const price = parseFloat(row.querySelector('.sys-price')?.value) || 0;
+                const total = qty * price;
+                const cell = row.querySelector('.sys-row-total');
+                if (cell) cell.textContent = total.toFixed(2);
+                grand += total;
+            });
+            document.getElementById('sysGrandTotal').textContent = grand.toFixed(2);
+        }
+
+        function exportSysInvoicePDF() {
+            const element = document.getElementById('sysInvoicePanel');
+            const opt = {
+                margin: [0.5, 0.5, 0.5, 0.5],
+                filename: `SystemInvoice_${document.getElementById('sysInvNo').value || 'untitled'}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, logging: false },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+
+        function prepareSysInvoice() {
+            const dateInput = document.getElementById('sysInvDate');
+            if (!dateInput.value) {
+                const today = new Date();
+                dateInput.value = today.toISOString().split('T')[0];
+            }
+            const invNo = document.getElementById('sysInvNo');
+            if (!invNo.value) {
+                invNo.value = generateSysInvoiceNo();
+            }
+        }
+
         // ================== INIT ==================
         window.onload = () => {
             initFlatpickr();
             loadData(true);
             updatePeriodInputs();
             setupInvoiceSync();
+            prepareSysInvoice();
+            if (document.getElementById('sysItemsBody').children.length === 0) {
+                addSysItemRow();
+            }
         };
     </script>
 </body>
