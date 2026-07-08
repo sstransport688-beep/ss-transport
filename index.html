@@ -2010,48 +2010,45 @@
             document.getElementById('sysGrandTotal').textContent = grand.toFixed(2);
         }
 
-        function exportSysInvoicePDF() {
-            const panel = document.getElementById('sysInvoicePanel');
-            const clone = panel.cloneNode(true);
+      function exportSysInvoicePDF() {
+    const panel = document.getElementById('sysInvoicePanel');
 
-            // Position on‑screen but invisible so html2canvas can render it
-            clone.style.position = 'fixed';
-            clone.style.top = '0';
-            clone.style.left = '0';
-            clone.style.width = panel.offsetWidth + 'px';
-            clone.style.zIndex = '-1';
-            clone.style.opacity = '0';
-            clone.style.pointerEvents = 'none';
-            clone.style.background = '#fff';
-            document.body.appendChild(clone);
+    // 1. Replace every text/number/date input with a span showing its value
+    const replacements = [];
+    panel.querySelectorAll('input[type="text"], input[type="number"], input[type="date"]').forEach(input => {
+        const span = document.createElement('span');
+        span.textContent = input.value || '';
+        span.style.display = 'inline-block';
+        span.style.width = '100%';
+        span.style.padding = '4px';
+        span.style.fontSize = '0.9em';
+        input.parentNode.replaceChild(span, input);
+        replacements.push({ span, input, parent: span.parentNode });
+    });
 
-            // Replace all text/number/date inputs with plain spans showing their values
-            clone.querySelectorAll('input[type="text"], input[type="number"], input[type="date"]').forEach(input => {
-                const span = document.createElement('span');
-                span.textContent = input.value || '';
-                span.style.display = 'inline-block';
-                span.style.width = '100%';
-                span.style.padding = '4px';
-                span.style.fontSize = '0.9em';
-                input.parentNode.replaceChild(span, input);
-            });
+    // 2. Hide all buttons
+    const buttons = panel.querySelectorAll('button');
+    buttons.forEach(btn => btn.style.display = 'none');
 
-            // Remove all buttons
-            clone.querySelectorAll('button').forEach(btn => btn.remove());
+    // 3. Export
+    const opt = {
+        margin: [0.5, 0.5, 0.5, 0.5],
+        filename: `SystemInvoice_${document.getElementById('sysInvNo').value || 'untitled'}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    };
 
-            const opt = {
-                margin: [0.5, 0.5, 0.5, 0.5],
-                filename: `SystemInvoice_${document.getElementById('sysInvNo').value || 'untitled'}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, logging: false },
-                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
-                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-            };
-
-            html2pdf().set(opt).from(clone).save().then(() => {
-                document.body.removeChild(clone);
-            });
-        }
+    html2pdf().set(opt).from(panel).save().then(() => {
+        // 4. Restore inputs
+        replacements.forEach(({ span, input }) => {
+            span.parentNode.replaceChild(input, span);
+        });
+        // 5. Restore buttons
+        buttons.forEach(btn => btn.style.display = '');
+    });
+}
 
         function prepareSysInvoice() {
             const dateInput = document.getElementById('sysInvDate');
