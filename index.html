@@ -1963,7 +1963,7 @@
             });
         }
 
-        // ================== SYSTEM INVOICE LOGIC (NEW) ==================
+        // ================== SYSTEM INVOICE LOGIC (IMPROVED PDF) ==================
         function generateSysInvoiceNo() {
             const now = new Date();
             const d = String(now.getDate()).padStart(2,'0');
@@ -2011,7 +2011,28 @@
         }
 
         function exportSysInvoicePDF() {
-            const element = document.getElementById('sysInvoicePanel');
+            const panel = document.getElementById('sysInvoicePanel');
+            const clone = panel.cloneNode(true);
+            clone.style.position = 'absolute';
+            clone.style.left = '-9999px';
+            clone.style.top = '0';
+            clone.style.width = panel.offsetWidth + 'px';
+            document.body.appendChild(clone);
+
+            // Replace all text/number/date inputs with their values as plain text
+            clone.querySelectorAll('input[type="text"], input[type="number"], input[type="date"]').forEach(input => {
+                const span = document.createElement('span');
+                span.textContent = input.value || '';
+                span.style.display = 'inline-block';
+                span.style.width = '100%';
+                span.style.padding = '4px';
+                span.style.fontSize = '0.9em';
+                input.parentNode.replaceChild(span, input);
+            });
+
+            // Remove all buttons
+            clone.querySelectorAll('button').forEach(btn => btn.remove());
+
             const opt = {
                 margin: [0.5, 0.5, 0.5, 0.5],
                 filename: `SystemInvoice_${document.getElementById('sysInvNo').value || 'untitled'}.pdf`,
@@ -2020,7 +2041,10 @@
                 jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
                 pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
             };
-            html2pdf().set(opt).from(element).save();
+
+            html2pdf().set(opt).from(clone).save().then(() => {
+                document.body.removeChild(clone);
+            });
         }
 
         function prepareSysInvoice() {
