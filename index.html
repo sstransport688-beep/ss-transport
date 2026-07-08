@@ -568,7 +568,7 @@
             </div>
 
             <div style="text-align: center; margin-top: 15px;">
-                <button class="btn-primary" onclick="exportSysInvoicePDF()">📄 Export PDF</button>
+                <button class="btn-primary" id="sysExportBtn" onclick="exportSysInvoicePDF()">📄 Export PDF</button>
             </div>
         </div>
     </div>
@@ -1955,7 +1955,7 @@
             });
         }
 
-        // ================== SYSTEM INVOICE LOGIC (FIXED PDF) ==================
+        // ================== SYSTEM INVOICE LOGIC (IMPROVED EXPORT) ==================
         function generateSysInvoiceNo() {
             const now = new Date();
             const d = String(now.getDate()).padStart(2,'0');
@@ -2004,8 +2004,14 @@
 
         function exportSysInvoicePDF() {
             const panel = document.getElementById('sysInvoicePanel');
+            const exportBtn = document.getElementById('sysExportBtn');
+            const originalBtnText = exportBtn.innerHTML;
 
-            // Replace all text/number/date inputs with spans showing their values
+            // Show loading state on button
+            exportBtn.disabled = true;
+            exportBtn.innerHTML = '⏳ Generating PDF...';
+
+            // 1. Replace inputs with spans (store replacements to restore later)
             const replacements = [];
             panel.querySelectorAll('input[type="text"], input[type="number"], input[type="date"]').forEach(input => {
                 const span = document.createElement('span');
@@ -2018,7 +2024,7 @@
                 replacements.push({ span, input, parent: span.parentNode });
             });
 
-            // Hide all buttons
+            // 2. Hide all buttons
             const buttons = panel.querySelectorAll('button');
             buttons.forEach(btn => btn.style.display = 'none');
 
@@ -2031,14 +2037,25 @@
                 pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
             };
 
-            html2pdf().set(opt).from(panel).save().then(() => {
-                // Restore inputs
-                replacements.forEach(({ span, input }) => {
-                    span.parentNode.replaceChild(input, span);
+            html2pdf().set(opt).from(panel).save()
+                .then(() => {
+                    // Success
+                })
+                .catch(err => {
+                    console.error('PDF export error:', err);
+                    alert('An error occurred while generating the PDF. Please try again.');
+                })
+                .finally(() => {
+                    // 3. Restore inputs
+                    replacements.forEach(({ span, input }) => {
+                        span.parentNode.replaceChild(input, span);
+                    });
+                    // 4. Restore buttons
+                    buttons.forEach(btn => btn.style.display = '');
+                    // 5. Restore export button
+                    exportBtn.disabled = false;
+                    exportBtn.innerHTML = originalBtnText;
                 });
-                // Restore buttons
-                buttons.forEach(btn => btn.style.display = '');
-            });
         }
 
         function prepareSysInvoice() {
