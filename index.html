@@ -15,7 +15,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
-        /* All CSS unchanged – same as the previous fully working version */
+        /* … all CSS unchanged … */
         body { font-family: Arial, sans-serif; margin: auto; padding: 20px; box-sizing: border-box; }
         body.max-width-constrained { max-width: 1100px; }
         h1 { margin-bottom: 5px; }
@@ -530,7 +530,7 @@
                 </div>
                 <div class="form-row" style="height: auto; flex-direction: column; align-items: flex-start;">
                     <label style="width:100%; text-align:left;">Invoice No.:</label>
-                    <input type="text" id="sysInvNo" style="width:100%; height:35px; background:#f0f0f0;" readonly>
+                    <input type="text" id="sysInvNo" style="width:100%; height:35px;" placeholder="INVddmmyyyy-001">
                 </div>
             </div>
 
@@ -1955,13 +1955,43 @@
             });
         }
 
-        // ================== SYSTEM INVOICE LOGIC (FIXED EXPORT – ONCLONE METHOD) ==================
-        function generateSysInvoiceNo() {
+        // ================== SYSTEM INVOICE LOGIC (DAILY RESET) ==================
+        function getSysInvoiceDateKey() {
             const now = new Date();
             const d = String(now.getDate()).padStart(2,'0');
             const m = String(now.getMonth()+1).padStart(2,'0');
             const y = now.getFullYear();
-            return `INV${d}${m}${y}-001`;
+            return `${d}${m}${y}`;
+        }
+
+        function getStoredInvoiceCounter() {
+            const today = getSysInvoiceDateKey();
+            const storedDate = localStorage.getItem('sysInvoiceDate');
+            const storedCounter = localStorage.getItem('sysInvoiceCounter');
+            if (storedDate !== today) {
+                // new day, reset to 1
+                localStorage.setItem('sysInvoiceDate', today);
+                localStorage.setItem('sysInvoiceCounter', '1');
+                return 1;
+            }
+            return storedCounter ? parseInt(storedCounter) : 1;
+        }
+
+        function incrementAndGetInvoiceCounter() {
+            const today = getSysInvoiceDateKey();
+            let counter = getStoredInvoiceCounter();
+            counter++;
+            localStorage.setItem('sysInvoiceDate', today);
+            localStorage.setItem('sysInvoiceCounter', String(counter));
+            return counter;
+        }
+
+        function generateSysInvoiceNo(serial) {
+            const now = new Date();
+            const d = String(now.getDate()).padStart(2,'0');
+            const m = String(now.getMonth()+1).padStart(2,'0');
+            const y = now.getFullYear();
+            return `INV${d}${m}${y}-${String(serial).padStart(3,'0')}`;
         }
 
         function addSysItemRow(desc = '', qty = 1, price = 0) {
@@ -2018,10 +2048,7 @@
                     useCORS: true,
                     logging: false,
                     onclone: function(clonedDoc) {
-                        // Modify the cloned document only – live page stays untouched
                         const cloneBody = clonedDoc.body || clonedDoc.documentElement;
-
-                        // Replace inputs with spans showing their current values
                         cloneBody.querySelectorAll('input[type="text"], input[type="number"], input[type="date"]').forEach(input => {
                             const span = clonedDoc.createElement('span');
                             span.textContent = input.value || '';
@@ -2031,8 +2058,6 @@
                             span.style.fontSize = '0.9em';
                             input.parentNode.replaceChild(span, input);
                         });
-
-                        // Remove all buttons from the clone
                         cloneBody.querySelectorAll('button').forEach(btn => btn.remove());
                     }
                 },
@@ -2041,6 +2066,11 @@
             };
 
             html2pdf().set(opt).from(panel).save()
+                .then(() => {
+                    // Increment and update the invoice number for the next invoice
+                    const nextSerial = incrementAndGetInvoiceCounter();
+                    document.getElementById('sysInvNo').value = generateSysInvoiceNo(nextSerial);
+                })
                 .catch(err => {
                     console.error('PDF export error:', err);
                     alert('An error occurred while generating the PDF. Please try again.');
@@ -2059,7 +2089,8 @@
             }
             const invNo = document.getElementById('sysInvNo');
             if (!invNo.value) {
-                invNo.value = generateSysInvoiceNo();
+                const currentSerial = getStoredInvoiceCounter();
+                invNo.value = generateSysInvoiceNo(currentSerial);
             }
         }
 
