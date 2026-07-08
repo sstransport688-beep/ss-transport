@@ -1963,7 +1963,7 @@
             });
         }
 
-        // ================== SYSTEM INVOICE LOGIC (IMPROVED PDF) ==================
+        // ================== SYSTEM INVOICE LOGIC (FIXED PDF) ==================
         function generateSysInvoiceNo() {
             const now = new Date();
             const d = String(now.getDate()).padStart(2,'0');
@@ -2013,13 +2013,19 @@
         function exportSysInvoicePDF() {
             const panel = document.getElementById('sysInvoicePanel');
             const clone = panel.cloneNode(true);
-            clone.style.position = 'absolute';
-            clone.style.left = '-9999px';
+
+            // Position on‑screen but invisible so html2canvas can render it
+            clone.style.position = 'fixed';
             clone.style.top = '0';
+            clone.style.left = '0';
             clone.style.width = panel.offsetWidth + 'px';
+            clone.style.zIndex = '-1';
+            clone.style.opacity = '0';
+            clone.style.pointerEvents = 'none';
+            clone.style.background = '#fff';
             document.body.appendChild(clone);
 
-            // Replace all text/number/date inputs with their values as plain text
+            // Replace all text/number/date inputs with plain spans showing their values
             clone.querySelectorAll('input[type="text"], input[type="number"], input[type="date"]').forEach(input => {
                 const span = document.createElement('span');
                 span.textContent = input.value || '';
