@@ -169,11 +169,6 @@
         .date-display { font-variant-numeric: tabular-nums; }
         .upload-section { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 2px solid var(--inv-bg); }
 
-        /* System Invoice Styles */
-        .sys-invoice-table th, .sys-invoice-table td { padding: 6px; font-size: 0.9em; }
-        .sys-invoice-table input { width: 100%; box-sizing: border-box; border: none; padding: 4px; font-size: 0.9em; }
-        .sys-invoice-table input[type="number"] { text-align: right; }
-
         @media (max-width: 600px) {
             body { padding: 10px; }
             .form-row { flex-direction: column; height: auto; align-items: stretch; margin-bottom: 12px; }
@@ -208,7 +203,7 @@
         <button class="tab" onclick="switchTab('expenses')">🧾 Expenses</button>
         <button class="tab" onclick="switchTab('report')">📈 Report & Tax</button>
         <button class="tab" onclick="switchTab('invoice')">📄 Invoice Generator</button>
-        <button class="tab" onclick="switchTab('sysInvoice')">🧾 System Invoice</button>
+        <!-- System Invoice tab removed -->
     </div>
 
     <!-- ================== SALES PANEL (unchanged) ================== -->
@@ -502,77 +497,7 @@
         </div>
     </div>
 
-    <!-- ================== SYSTEM INVOICE PANEL ================== -->
-    <div class="panel" id="sysInvoicePanel">
-        <div style="max-width: 800px; margin: 0 auto;">
-            <h3>🧾 System Invoice Generator</h3>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px;">
-                <div class="form-row" style="height: auto; flex-direction: column; align-items: flex-start;">
-                    <label style="width:100%; text-align:left;">Sender Name:</label>
-                    <input type="text" id="sysSenderName" style="width:100%; height:35px;">
-                </div>
-                <div class="form-row" style="height: auto; flex-direction: column; align-items: flex-start;">
-                    <label style="width:100%; text-align:left;">Sender IC:</label>
-                    <input type="text" id="sysSenderIC" style="width:100%; height:35px;">
-                </div>
-                <div class="form-row" style="height: auto; flex-direction: column; align-items: flex-start;">
-                    <label style="width:100%; text-align:left;">Bank Name:</label>
-                    <input type="text" id="sysBankName" style="width:100%; height:35px;">
-                </div>
-                <div class="form-row" style="height: auto; flex-direction: column; align-items: flex-start;">
-                    <label style="width:100%; text-align:left;">Bank Account No.:</label>
-                    <input type="text" id="sysBankAcc" style="width:100%; height:35px;">
-                </div>
-                <div class="form-row" style="height: auto; flex-direction: column; align-items: flex-start;">
-                    <label style="width:100%; text-align:left;">Invoice Date:</label>
-                    <input type="date" id="sysInvDate" style="width:100%; height:35px;">
-                </div>
-                <div class="form-row" style="height: auto; flex-direction: column; align-items: flex-start;">
-                    <label style="width:100%; text-align:left;">Invoice No.:</label>
-                    <input type="text" id="sysInvNo" style="width:100%; height:35px;" placeholder="INVddmmyyyy-001">
-                </div>
-            </div>
-
-            <div style="margin-top: 20px; background: #f8f9fa; padding: 10px; border-radius: 6px;">
-                <strong>Company Name:</strong> Sina Star Transport<br>
-                <strong>Address:</strong> Puchong, Selangor<br>
-                <strong>Attn:</strong> Mr Leong &nbsp;|&nbsp; <strong>Contact No.:</strong> 0122336290
-            </div>
-
-            <h4 style="margin-top: 20px;">Items</h4>
-            <div class="table-wrapper">
-                <table id="sysItemsTable" class="sys-invoice-table">
-                    <thead>
-                        <tr style="background:#f1f5f9;">
-                            <th style="width:60px;">No.</th>
-                            <th>Description</th>
-                            <th style="width:80px;">Qty</th>
-                            <th style="width:100px;">Unit Price (RM)</th>
-                            <th style="width:120px;">Total Price (RM)</th>
-                            <th style="width:40px;"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="sysItemsBody">
-                        <!-- dynamic rows -->
-                    </tbody>
-                </table>
-            </div>
-            <button class="btn-primary" onclick="addSysItemRow()" style="margin-top: 5px;">+ Add New Item</button>
-
-            <div style="text-align: right; font-size: 1.2em; font-weight: bold; margin-top: 15px;">
-                Grand Total: RM <span id="sysGrandTotal">0.00</span>
-            </div>
-
-            <div style="text-align: center; margin-top: 15px; color: #666; font-style: italic;">
-                System auto-generated, no signature is required
-            </div>
-
-            <div style="text-align: center; margin-top: 15px;">
-                <button class="btn-primary" id="sysExportBtn" onclick="exportSysInvoicePDF()">📄 Export PDF</button>
-            </div>
-        </div>
-    </div>
+    <!-- System Invoice Panel removed -->
 
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbwtCfdJGsUsQ4PKWuLWxB6W7EF9J94YDrgCa8yO7w-MqqNOBVc7fUQrheFGTR94Fr0Sbw/exec';
@@ -820,14 +745,13 @@
             if (tabName === 'expenses') { applyExpenseFilter(); }
             if (tabName === 'invoice') {
                 prepareNewInvoice();
-                // Force re-sync of all sync-inputs so preview matches current field values
                 setTimeout(() => {
                     document.querySelectorAll('.sync-input').forEach(input => {
                         input.dispatchEvent(new Event('input'));
                     });
                 }, 50);
             }
-            if (tabName === 'sysInvoice') { prepareSysInvoice(); }
+            // sysInvoice handling removed
         }
 
         function prepareNewInvoice() {
@@ -1714,24 +1638,12 @@
             });
         }
 
-        function exportSysInvoicePDF() {
-            // unchanged
-        }
-
-        function prepareSysInvoice() {
-            // unchanged
-        }
-
         // ================== INIT ==================
         window.onload = () => {
             initFlatpickr();
             loadData(true);
             updatePeriodInputs();
             setupInvoiceSync();
-            prepareSysInvoice();
-            if (document.getElementById('sysItemsBody').children.length === 0) {
-                addSysItemRow();
-            }
         };
     </script>
 </body>
