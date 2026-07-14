@@ -365,7 +365,7 @@
         </div>
     </div>
 
-    <!-- ================== ORIGINAL INVOICE PANEL ================== -->
+    <!-- ================== INVOICE PANEL (auto‑number generation) ================== -->
     <div class="panel" id="invoicePanel">
         <div class="invoice-container">
             <div class="inv-panel">
@@ -559,6 +559,19 @@
             return prefix + String(nextNum).padStart(4,'0') + year;
         }
 
+        // NEW: auto‑generate invoice number for the Invoice Generator tab
+        function generateNewInvoiceNumber() {
+            const now = new Date();
+            const year = String(now.getFullYear()).slice(-2);
+            const prefix = `SS-INV-`;
+            const existing = salesOrders
+                .filter(o => o.invoiceNumber && o.invoiceNumber.startsWith(prefix))
+                .map(o => parseInt(o.invoiceNumber.replace(prefix, '').replace(year, ''),10))
+                .filter(n => !isNaN(n));
+            const nextNum = existing.length ? Math.max(...existing) + 1 : 1;
+            return prefix + String(nextNum).padStart(4,'0') + year;
+        }
+
         const INVOICE_DEFAULTS = { salesExecutive: 'LCT', paymentTerm: 'COD/Upon Job Delivered' };
 
         async function loadData(showSpinner = false) {
@@ -741,7 +754,6 @@
             if (tabName === 'expenses') { applyExpenseFilter(); }
             if (tabName === 'invoice') {
                 prepareNewInvoice();
-                // Re-initialize items table logic every time we switch to this tab
                 initItemsTable();
                 setTimeout(() => {
                     document.querySelectorAll('.sync-input').forEach(input => {
@@ -751,10 +763,14 @@
             }
         }
 
+        // UPDATED: now auto‑generates a fresh invoice number
         function prepareNewInvoice() {
             const invNoField = document.getElementById('invSalesOrderNo');
             invNoField.value = '';
             invNoField.readOnly = false;
+
+            const newInvNo = generateNewInvoiceNumber();
+            invNoField.value = newInvNo;
 
             const salesExecField = document.querySelector('[data-target="prev-exec"]');
             const paymentTermField = document.querySelector('[data-target="prev-term"]');
@@ -1620,7 +1636,7 @@
         async function refreshData() { await loadData(true); alert('Data refreshed!'); }
         setInterval(async () => { try { if (!editingSalesId && !editingExpenseId) await loadData(false); } catch(e) {} }, 10000);
 
-        // ================== INVOICE ITEMS TABLE LOGIC (INITIALIZED SEPARATELY) ==================
+        // ================== INVOICE ITEMS TABLE LOGIC ==================
         function initItemsTable() {
             const itemsBody = document.getElementById('itemsBody');
             const prevItems = document.getElementById('prev-items');
@@ -1753,7 +1769,6 @@
                 });
             });
 
-            // PDF export
             document.getElementById('exportPdf').addEventListener('click', async () => {
                 const btn = document.getElementById('exportPdf');
                 const originalText = btn.innerHTML;
@@ -1873,7 +1888,7 @@
             loadData(true);
             updatePeriodInputs();
             setupInvoiceSync();
-            initItemsTable();   // items table ready from the start
+            initItemsTable();
         };
     </script>
 </body>
