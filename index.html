@@ -365,7 +365,7 @@
         </div>
     </div>
 
-    <!-- ================== INVOICE PANEL (auto‑number generation) ================== -->
+    <!-- ================== INVOICE PANEL (changed "Vehicle Type" to "Type of Services") ================== -->
     <div class="panel" id="invoicePanel">
         <div class="invoice-container">
             <div class="inv-panel">
@@ -394,7 +394,7 @@
                                 <th style="padding:6px; border:1px solid var(--inv-border); font-size:0.75rem;">From</th>
                                 <th style="padding:6px; border:1px solid var(--inv-border); font-size:0.75rem;">To</th>
                                 <th style="padding:6px; border:1px solid var(--inv-border); font-size:0.75rem;">UOM</th>
-                                <th style="padding:6px; border:1px solid var(--inv-border); font-size:0.75rem;">Vehicle Type</th>
+                                <th style="padding:6px; border:1px solid var(--inv-border); font-size:0.75rem;">Type of Services</th>
                                 <th style="padding:6px; border:1px solid var(--inv-border); font-size:0.75rem;">Price</th>
                                 <th style="padding:6px; border:1px solid var(--inv-border); font-size:0.75rem;">QTY</th>
                                 <th style="padding:6px; border:1px solid var(--inv-border); font-size:0.75rem;">Act</th>
@@ -459,7 +459,7 @@
                     <div class="table-wrapper">
                         <table class="inv-items-table">
                             <thead>
-                                <tr><th>Date</th><th>From</th><th>To</th><th>UOM</th><th>Vehicle</th><th>Price</th><th>QTY</th><th>Total</th></tr>
+                                <tr><th>Date</th><th>From</th><th>To</th><th>UOM</th><th>Type of Services</th><th>Price</th><th>QTY</th><th>Total</th></tr>
                             </thead>
                             <tbody id="prev-items">
                                 <tr><td colspan="8" class="empty">No items added yet</td></tr>
@@ -559,7 +559,6 @@
             return prefix + String(nextNum).padStart(4,'0') + year;
         }
 
-        // NEW: auto‑generate invoice number for the Invoice Generator tab
         function generateNewInvoiceNumber() {
             const now = new Date();
             const year = String(now.getFullYear()).slice(-2);
@@ -763,7 +762,6 @@
             }
         }
 
-        // UPDATED: now auto‑generates a fresh invoice number
         function prepareNewInvoice() {
             const invNoField = document.getElementById('invSalesOrderNo');
             invNoField.value = '';
@@ -1658,7 +1656,7 @@
                     const from = row.querySelector('.item-from')?.value || '';
                     const to   = row.querySelector('.item-to')?.value || '';
                     const uom  = row.querySelector('.item-uom')?.value || '';
-                    const vehicle = row.querySelector('.item-vehicle')?.value || '';
+                    const service = row.querySelector('.item-vehicle')?.value || ''; // class kept as item-vehicle but now means Type of Services
                     const price = parseFloat(row.querySelector('.item-price')?.value) || 0;
                     const qty   = parseFloat(row.querySelector('.item-qty')?.value) || 0;
                     const total = price * qty;
@@ -1670,7 +1668,7 @@
                         <td>${from}</td>
                         <td>${to}</td>
                         <td>${uom}</td>
-                        <td>${vehicle}</td>
+                        <td>${service}</td>
                         <td>${price.toFixed(2)}</td>
                         <td>${qty}</td>
                         <td>${total.toFixed(2)}</td>`;
@@ -1707,7 +1705,7 @@
                             <input type="text" class="item-uom" style="border:none; width:100%; font-size:0.75rem;" value="LOT">
                         </td>
                         <td style="border:1px solid var(--inv-border); padding:4px;">
-                            <input type="text" class="item-vehicle" style="border:none; width:100%; font-size:0.75rem;" placeholder="Vehicle">
+                            <input type="text" class="item-vehicle" style="border:none; width:100%; font-size:0.75rem;" placeholder="Type of Service">
                         </td>
                         <td style="border:1px solid var(--inv-border); padding:4px;">
                             <input type="number" class="item-price" style="border:none; width:100%; font-size:0.75rem;" placeholder="0.00">
@@ -1723,7 +1721,7 @@
                 });
             }
 
-            window.addInvoiceItem = (from, to, price, qty, vehicle = '') => {
+            window.addInvoiceItem = (from, to, price, qty, service = '') => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td style="border:1px solid var(--inv-border); padding:4px;">
@@ -1739,7 +1737,7 @@
                         <input type="text" class="item-uom" style="border:none; width:100%; font-size:0.75rem;" value="LOT">
                     </td>
                     <td style="border:1px solid var(--inv-border); padding:4px;">
-                        <input type="text" class="item-vehicle" style="border:none; width:100%; font-size:0.75rem;" value="${vehicle}">
+                        <input type="text" class="item-vehicle" style="border:none; width:100%; font-size:0.75rem;" value="${service}">
                     </td>
                     <td style="border:1px solid var(--inv-border); padding:4px;">
                         <input type="number" class="item-price" style="border:none; width:100%; font-size:0.75rem;" value="${price}">
@@ -1805,7 +1803,7 @@
                         rows.forEach((row, index) => {
                             const from    = row.querySelector('.item-from')?.value.trim()    || '';
                             const to      = row.querySelector('.item-to')?.value.trim()      || '';
-                            const vehicle = row.querySelector('.item-vehicle')?.value.trim() || '';
+                            const service = row.querySelector('.item-vehicle')?.value.trim() || ''; // now service instead of vehicle
                             const price   = parseFloat(row.querySelector('.item-price')?.value) || 0;
                             const qty     = parseFloat(row.querySelector('.item-qty')?.value)   || 1;
                             const gross   = price * qty;
@@ -1820,7 +1818,7 @@
                                 clientSender: clientName,
                                 destFrom: from,
                                 destTo: to,
-                                vehicle: vehicle,
+                                vehicle: service,   // stored as vehicle in sales order
                                 gross: gross,
                                 billing: false,
                                 paid: false,
